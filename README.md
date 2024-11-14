@@ -1,6 +1,6 @@
 [raistlinlei](http://github.com/raistlinlei/raistlinlei.github.io) 的博客
 
-本博客从 [Yonsm](http://github.com/Yonsm/Yonsm.github.io) fork而来，底层为Jekyll。
+本博客系统从 [Yonsm](http://github.com/Yonsm/Yonsm.github.io) fork而来，底层为Jekyll。
 
 raistlinlei
 
