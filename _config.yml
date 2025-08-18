@@ -1,14 +1,14 @@
 markdown: kramdown
 permalink: /:title/
 url: https://raistlinlei.github.io
-name: raistlinlei
+name: raistlinlei的博客
 author: raistlinlei
 qq: 51422841
 email: 51422841@qq.com
 beian: 
 cnzz: 
 weibo: 
-github: raistlinlei
+github: 
 safe: true
 paginate: 20
 about: "这是我的个人博客"
