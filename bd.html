@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BD薪资全自动计算器</title>
+    <title>BD薪资计算器（2026年7月版本）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -26,8 +26,14 @@
         h1 {
             text-align: center;
             color: #1f2937;
-            margin-bottom: 24px;
+            margin-bottom: 8px;
             font-size: 22px;
+        }
+        .version-tip {
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
         }
         .row {
             display: grid;
@@ -39,6 +45,25 @@
             display: flex;
             flex-direction: column;
         }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .btn-option {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .btn-option.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
         .input-group {
             display: flex;
             align-items: center;
@@ -49,7 +74,7 @@
             color: #4b5563;
             margin-bottom: 6px;
         }
-        input, select {
+        input {
             height: 42px;
             padding: 0 12px;
             border: 1px solid #d1d5db;
@@ -59,15 +84,20 @@
         input::placeholder {
             color: #9ca3af;
         }
-        input:focus, select:focus {
+        input:focus {
             outline: none;
             border-color: #2563eb;
+        }
+        .tip-small {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
         }
         .btn-wrap {
             margin: 24px 0;
             text-align: center;
         }
-        button {
+        button#calcBtn {
             background: #2563eb;
             color: white;
             border: none;
@@ -76,7 +106,7 @@
             font-size: 16px;
             cursor: pointer;
         }
-        button:hover {
+        button#calcBtn:hover {
             background: #1d4ed8;
         }
         .result-box {
@@ -97,6 +127,19 @@
             padding: 8px 0;
             font-size: 15px;
         }
+        .key-line {
+            background-color: #eef2ff;
+            border-radius: 6px;
+            padding: 8px 4px !important;
+            font-weight: bold;
+            color: #dc2626;
+            font-size: 16px;
+        }
+        .desc-line {
+            font-size: 13px;
+            color: #6b7280;
+            padding: 4px 0;
+        }
         .total {
             margin-top:10px;
             padding-top:12px;
@@ -112,52 +155,55 @@
         }
         @media(max-width:640px){
             .row{grid-template-columns:1fr;}
+            .btn-group{flex-wrap:wrap;}
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>BD薪资全自动计算器</h1>
+    <h1>BD薪资计算器</h1>
+    <div class="version-tip">2026年7月版本</div>
     <div class="row">
         <div class="item">
             <label>员工身份</label>
-            <select id="staffType">
-                <option value="old">老员工</option>
-                <option value="new">新员工</option>
-            </select>
+            <div class="btn-group" id="staffTypeGroup">
+                <button class="btn-option active" data-val="old">老员工</button>
+                <button class="btn-option" data-val="new">新员工</button>
+            </div>
         </div>
         <div class="item">
             <label>复购城市档位</label>
-            <select id="cityRep">
-                <option value="high">高复购城市</option>
-                <option value="low">低复购城市</option>
-            </select>
+            <div class="btn-group" id="cityRepGroup">
+                <button class="btn-option active" data-val="high">高复购城市</button>
+                <button class="btn-option" data-val="low">低复购城市</button>
+            </div>
         </div>
         <div class="item">
             <label>TU城市档位</label>
-            <select id="cityTu">
-                <option value="high">高TU城市</option>
-                <option value="low">低TU城市</option>
-            </select>
+            <div class="btn-group" id="cityTuGroup">
+                <button class="btn-option active" data-val="high">高TU城市</button>
+                <button class="btn-option" data-val="low">低TU城市</button>
+            </div>
         </div>
         <div class="item">
             <label>荣誉激励城市档位</label>
-            <select id="cityHonor">
-                <option value="high">高人效城市</option>
-                <option value="low">低人效城市</option>
-            </select>
+            <div class="btn-group" id="cityHonorGroup">
+                <button class="btn-option active" data-val="high">高人效城市</button>
+                <button class="btn-option" data-val="low">低人效城市</button>
+            </div>
         </div>
         <div class="item">
             <label>底薪</label>
             <input type="number" id="basePay" value="3400">
+            <div class="tip-small">未达到月单量考核门槛的请修改底薪</div>
         </div>
         <div class="item">
             <label>有效下单</label>
-            <input type="number" id="firstOrder" placeholder="请输入有效下单量">
+            <input type="number" id="firstOrder" placeholder="请输入有效下单总量">
         </div>
         <div class="item">
             <label>有效复购</label>
-            <input type="number" id="repOrder" placeholder="请输入有效复购量">
+            <input type="number" id="repOrder" placeholder="请输入有效复购总量">
         </div>
         <div class="item">
             <label>拉新TU</label>
@@ -196,7 +242,8 @@
         </div>
         <div class="item">
             <label>住房补贴</label>
-            <input type="number" id="houseSubsidy" value="1400">
+            <input type="number" id="houseSubsidy" placeholder="请输入住房补贴">
+            <div class="tip-small">当日有效：10单50元，15单80元，20单120元。出差补贴也合并填入此处。</div>
         </div>
     </div>
     <div class="btn-wrap">
@@ -209,13 +256,35 @@
     <div class="tip">
         <strong>规则说明：</strong><br>
         1. 员工身份+复购/TU/荣誉激励三套城市档位独立选择，严格匹配薪酬方案；<br>
-        2. 自动根据有效下单、有效复购、拉新TU、买菜订单（SKU）、入群率，匹配4项质量系数；<br>
+        2. 年终储蓄奖金：有效下单1分/单、有效复购2分/单，总积分×1元/分，积分周期2026.7.1-2027.3.31，不计入税前总薪资；<br>
         3. 综合质量系数 = 复购质量系数×0.3 + TU质量系数×0.3 + 买菜质量系数×0.2 + 入群率质量系数×0.2；<br>
         4. 订单提成不乘质量系数，仅荣誉激励 × 综合质量系数。
     </div>
 </div>
 
 <script>
+// 按钮组初始化
+function initBtnGroup(groupId){
+    const group = document.getElementById(groupId);
+    const btns = group.querySelectorAll('.btn-option');
+    btns.forEach(btn=>{
+        btn.addEventListener('click',()=>{
+            btns.forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+        })
+    })
+}
+initBtnGroup('staffTypeGroup');
+initBtnGroup('cityRepGroup');
+initBtnGroup('cityTuGroup');
+initBtnGroup('cityHonorGroup');
+
+// 获取当前选中值
+function getSelectedVal(groupId){
+    const active = document.querySelector(`#${groupId} .btn-option.active`);
+    return active.dataset.val;
+}
+
 const honorConfig = {
     new: {
         high: [[600,5000],[500,4000],[450,3500],[400,3000],[350,2500],[300,2000],[250,1500],[200,1000],[150,500],[0,0]],
@@ -260,11 +329,12 @@ function getGroupCoeff(rate){
 
 function calcSalary(){
     try{
-        const staffType = document.getElementById('staffType').value;
-        const cityRep = document.getElementById('cityRep').value;
-        const cityTu = document.getElementById('cityTu').value;
-        const cityHonor = document.getElementById('cityHonor').value;
-        const basePay = Number(document.getElementById('basePay').value);
+        const staffType = getSelectedVal('staffTypeGroup');
+        const cityRep = getSelectedVal('cityRepGroup');
+        const cityTu = getSelectedVal('cityTuGroup');
+        const cityHonor = getSelectedVal('cityHonorGroup');
+
+        const basePay = Math.round(Number(document.getElementById('basePay').value));
         const firstOrder = Number(document.getElementById('firstOrder').value || 0);
         const repOrder = Number(document.getElementById('repOrder').value || 0);
         const tuOrder = Number(document.getElementById('tuOrder').value || 0);
@@ -272,12 +342,17 @@ function calcSalary(){
         const groupRateInput = Number(document.getElementById('groupRate').value || 0);
         const groupRate = groupRateInput / 100;
 
+        // 自动计算年终储蓄奖金积分与金额，不计入税前薪资
+        const totalPoint = firstOrder * 1 + repOrder * 2;
+        const yearBonus = Math.round(totalPoint * 1);
+
         const priceFirst = Number(document.getElementById('priceFirst').value);
         const priceRep = Number(document.getElementById('priceRep').value);
-        const attendance = Number(document.getElementById('attendance').value);
-        const hotSubsidy = Number(document.getElementById('hotSubsidy').value);
-        const evSubsidy = Number(document.getElementById('evSubsidy').value);
-        const houseSubsidy = Number(document.getElementById('houseSubsidy').value);
+        const attendance = Math.round(Number(document.getElementById('attendance').value));
+        const hotSubsidy = Math.round(Number(document.getElementById('hotSubsidy').value));
+        const evSubsidy = Math.round(Number(document.getElementById('evSubsidy').value));
+        const houseSubsidy = Math.round(Number(document.getElementById('houseSubsidy').value || 0));
+        const subsidySum = attendance + hotSubsidy + evSubsidy + houseSubsidy;
 
         const repRate = firstOrder===0 ? 0 : repOrder / firstOrder;
         const tuRate = firstOrder===0 ? 0 : tuOrder / firstOrder;
@@ -290,8 +365,8 @@ function calcSalary(){
 
         const qualityRate = coeffRep*0.3 + coeffTu*0.3 + coeffSku*0.2 + coeffGroup*0.2;
 
-        const firstCommission = firstOrder * priceFirst;
-        const repCommission = repOrder * priceRep;
+        const firstCommission = Math.round(firstOrder * priceFirst);
+        const repCommission = Math.round(repOrder * priceRep);
         const totalCommission = firstCommission + repCommission;
 
         let honorMoney = 0;
@@ -302,10 +377,9 @@ function calcSalary(){
                 break;
             }
         }
-        const honorFinal = honorMoney * qualityRate;
-
-        const subsidySum = attendance + hotSubsidy + evSubsidy + houseSubsidy;
-        const totalPay = basePay + totalCommission + honorFinal + subsidySum;
+        const honorFinal = Math.round(honorMoney * qualityRate);
+        // 税前总薪资不含年终储蓄奖金
+        const totalPay = Math.round(basePay + totalCommission + honorFinal + subsidySum);
 
         let html = `
             <div class="line"><span>员工身份</span><span>${staffType==='old'?'老员工':'新员工'}</span></div>
@@ -318,18 +392,26 @@ function calcSalary(){
             <div class="line"><span>拉新TU占比</span><span>${(tuRate*100).toFixed(2)}%</span></div>
             <div class="line"><span>买菜订单（SKU）占比</span><span>${(skuRate*100).toFixed(2)}%</span></div>
             <div class="line"><span>入群率</span><span>${groupRateInput.toFixed(2)}%</span></div>
-            <div class="line"><span>复购质量系数</span><span>${coeffRep.toFixed(2)}</span></div>
-            <div class="line"><span>TU质量系数</span><span>${coeffTu.toFixed(2)}</span></div>
-            <div class="line"><span>买菜质量系数</span><span>${coeffSku.toFixed(2)}</span></div>
-            <div class="line"><span>入群率质量系数</span><span>${coeffGroup.toFixed(2)}</span></div>
-            <div class="line"><span>✅综合质量系数</span><span>${qualityRate.toFixed(4)}</span></div>
-            <div class="line"><span>首单提成</span><span>${firstCommission.toFixed(2)} 元</span></div>
-            <div class="line"><span>复购提成</span><span>${repCommission.toFixed(2)} 元</span></div>
-            <div class="line"><span>订单提成合计</span><span>${totalCommission.toFixed(2)} 元</span></div>
-            <div class="line"><span>荣誉基础奖金</span><span>${honorMoney} 元</span></div>
-            <div class="line"><span>折算后荣誉激励</span><span>${honorFinal.toFixed(2)} 元</span></div>
-            <div class="line"><span>补贴合计</span><span>${subsidySum.toFixed(2)} 元</span></div>
-            <div class="total line"><span>💰税前总薪资</span><span>${totalPay.toFixed(2)} 元</span></div>
+            <div class="line key-line"><span>复购质量系数</span><span>${coeffRep.toFixed(2)}</span></div>
+            <div class="line key-line"><span>TU质量系数</span><span>${coeffTu.toFixed(2)}</span></div>
+            <div class="line key-line"><span>买菜质量系数</span><span>${coeffSku.toFixed(2)}</span></div>
+            <div class="line key-line"><span>入群率质量系数</span><span>${coeffGroup.toFixed(2)}</span></div>
+            <div class="line key-line"><span>✅综合质量系数</span><span>${qualityRate.toFixed(2)}</span></div>
+            <div class="line key-line"><span>底薪</span><span>${basePay} 元</span></div>
+            <div class="line"><span>首单提成</span><span>${firstCommission} 元</span></div>
+            <div class="line"><span>复购提成</span><span>${repCommission} 元</span></div>
+            <div class="line key-line"><span>订单提成合计</span><span>${totalCommission} 元</span></div>
+            <div class="line"><span>荣誉档位奖金</span><span>${honorMoney} 元</span></div>
+            <div class="line key-line"><span>折算后荣誉激励</span><span>${honorFinal} 元</span></div>
+            <div class="line"><span>全勤奖</span><span>${attendance} 元</span></div>
+            <div class="line"><span>高温补贴</span><span>${hotSubsidy} 元</span></div>
+            <div class="line"><span>电动车补贴</span><span>${evSubsidy} 元</span></div>
+            <div class="line"><span>住房补贴</span><span>${houseSubsidy} 元</span></div>
+            <div class="line key-line"><span>补贴合计</span><span>${subsidySum} 元</span></div>
+            <div class="line key-line total"><span>💰税前总薪资</span><span>${totalPay} 元</span></div>
+            <div class="desc-line">薪资构成：底薪 + 订单提成合计 + 折算后荣誉激励 + 各项补贴合计</div>
+            <div class="line"><span>年终储蓄总积分</span><span>${totalPoint} 分</span></div>
+            <div class="line"><span>年终储蓄奖金</span><span>${yearBonus} 元</span></div>
         `;
         document.getElementById("result").innerHTML = html;
     }catch(err){
