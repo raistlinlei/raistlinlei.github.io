@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BD薪资全自动计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background: #f3f4f6;
+            padding: 20px;
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 24px;
+            font-size: 22px;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .item {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 6px;
+        }
+        input, select {
+            height: 42px;
+            padding: 0 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .btn-wrap {
+            margin: 24px 0;
+            text-align: center;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .result-box {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .result-title {
+            font-weight: bold;
+            font-size: 17px;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+        .line {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 15px;
+        }
+        .total {
+            margin-top:10px;
+            padding-top:12px;
+            border-top:1px solid #ddd;
+            font-weight:bold;
+            font-size:18px;
+            color:#dc2626;
+        }
+        .tip {
+            margin-top:16px;
+            font-size:13px;
+            color:#666;
+        }
+        @media(max-width:640px){
+            .row{grid-template-columns:1fr;}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>BD薪资全自动计算器</h1>
+    <div class="row">
+        <div class="item">
+            <label>员工身份</label>
+            <select id="staffType">
+                <option value="old">老员工</option>
+                <option value="new">新员工</option>
+            </select>
+        </div>
+        <div class="item">
+            <label>复购城市档位</label>
+            <select id="cityRep">
+                <option value="high">高复购城市</option>
+                <option value="low">低复购城市</option>
+            </select>
+        </div>
+        <div class="item">
+            <label>TU城市档位</label>
+            <select id="cityTu">
+                <option value="high">高TU城市</option>
+                <option value="low">低TU城市</option>
+            </select>
+        </div>
+        <div class="item">
+            <label>荣誉激励城市档位</label>
+            <select id="cityHonor">
+                <option value="high">高人效城市</option>
+                <option value="low">低人效城市</option>
+            </select>
+        </div>
+        <div class="item">
+            <label>底薪(二线老员工)</label>
+            <input type="number" id="basePay" value="3400">
+        </div>
+        <div class="item">
+            <label>有效首单量</label>
+            <input type="number" id="firstOrder" value="250">
+        </div>
+        <div class="item">
+            <label>复购单数</label>
+            <input type="number" id="repOrder" value="105">
+        </div>
+        <div class="item">
+            <label>拉新TU数</label>
+            <input type="number" id="tuOrder" value="90">
+        </div>
+        <div class="item">
+            <label>SKU买菜订单数</label>
+            <input type="number" id="skuOrder" value="121">
+        </div>
+        <div class="item">
+            <label>社群入群率(直接填百分比，如79.41填79.41)</label>
+            <input type="number" id="groupRate" value="79.41" step="0.01">
+        </div>
+        <div class="item">
+            <label>首单单价</label>
+            <input type="number" id="priceFirst" value="6">
+        </div>
+        <div class="item">
+            <label>复购单价</label>
+            <input type="number" id="priceRep" value="10">
+        </div>
+        <div class="item">
+            <label>全勤奖</label>
+            <input type="number" id="attendance" value="500">
+        </div>
+        <div class="item">
+            <label>高温补贴</label>
+            <input type="number" id="hotSubsidy" value="300">
+        </div>
+        <div class="item">
+            <label>电动车补贴</label>
+            <input type="number" id="evSubsidy" value="200">
+        </div>
+        <div class="item">
+            <label>住房补贴</label>
+            <input type="number" id="houseSubsidy" value="1400">
+        </div>
+    </div>
+    <div class="btn-wrap">
+        <button onclick="calcSalary()">立即计算薪资</button>
+    </div>
+    <div class="result-box">
+        <div class="result-title">📊薪资&系数计算明细</div>
+        <div id="result"></div>
+    </div>
+    <div class="tip">
+        <strong>规则说明：</strong><br>
+        1. 员工身份+复购/TU/荣誉激励三套城市档位独立选择，严格匹配薪酬方案；<br>
+        2. 自动根据首单量、复购/TU/SKU/入群率，匹配4项单项系数；<br>
+        3. 质量系数 = 复购系数×0.3 + TU系数×0.3 + SKU系数×0.2 + 社群系数×0.2；<br>
+        4. 订单提成不乘质量系数，仅荣誉激励 × 综合质量系数。
+    </div>
+</div>
+
+<script>
+// 荣誉档位配置：[身份][城市] => [[首单门槛,基础奖金]]
+const honorConfig = {
+    new: { // 新员工
+        high: [[600,5000],[500,4000],[450,3500],[400,3000],[350,2500],[300,2000],[250,1500],[200,1000],[150,500],[0,0]],
+        low: [[550,5000],[450,4000],[400,3500],[350,3000],[300,2500],[250,2000],[200,1500],[150,1000],[100,500],[0,0]]
+    },
+    old: { // 老员工
+        high: [[650,5000],[550,4000],[500,3500],[450,3000],[400,2500],[350,2000],[300,1500],[250,1000],[200,500],[0,0]],
+        low: [[600,5000],[500,4000],[450,3500],[400,3000],[350,2500],[300,2000],[250,1500],[200,1000],[150,500],[0,0]]
+    }
+};
+
+// 获取单项系数函数
+function getRepCoeff(rate, cityType){
+    const table = cityType==='high' ? [[0.5,1.5],[0.45,1.2],[0.4,1.1],[0.35,1],[0.3,0.9],[0.25,0.7],[0,0.5]]
+                                     : [[0.45,1.5],[0.4,1.2],[0.35,1.1],[0.3,1],[0.25,0.9],[0.2,0.7],[0,0.5]];
+    for(let item of table){
+        if(rate >= item[0]) return item[1];
+    }
+    return 0.5;
+}
+function getTuCoeff(rate, cityType){
+    const table = cityType==='high' ? [[0.55,1.5]
