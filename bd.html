@@ -39,6 +39,11 @@
             display: flex;
             flex-direction: column;
         }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
         label {
             font-size: 14px;
             color: #4b5563;
@@ -50,6 +55,9 @@
             border: 1px solid #d1d5db;
             border-radius: 8px;
             font-size: 16px;
+        }
+        input::placeholder {
+            color: #9ca3af;
         }
         input:focus, select:focus {
             outline: none;
@@ -140,28 +148,31 @@
             </select>
         </div>
         <div class="item">
-            <label>底薪(二线老员工)</label>
+            <label>底薪</label>
             <input type="number" id="basePay" value="3400">
         </div>
         <div class="item">
-            <label>有效首单量</label>
-            <input type="number" id="firstOrder" value="250">
+            <label>有效下单</label>
+            <input type="number" id="firstOrder" placeholder="请输入有效下单量">
         </div>
         <div class="item">
-            <label>复购单数</label>
-            <input type="number" id="repOrder" value="105">
+            <label>有效复购</label>
+            <input type="number" id="repOrder" placeholder="请输入有效复购量">
         </div>
         <div class="item">
-            <label>拉新TU数</label>
-            <input type="number" id="tuOrder" value="90">
+            <label>拉新TU</label>
+            <input type="number" id="tuOrder" placeholder="请输入拉新TU量">
         </div>
         <div class="item">
-            <label>SKU买菜订单数</label>
-            <input type="number" id="skuOrder" value="121">
+            <label>买菜订单（SKU）</label>
+            <input type="number" id="skuOrder" placeholder="请输入买菜订单（SKU）量">
         </div>
         <div class="item">
-            <label>社群入群率(直接填百分比，如79.41填79.41)</label>
-            <input type="number" id="groupRate" value="79.41" step="0.01">
+            <label>入群率</label>
+            <div class="input-group">
+                <input type="number" id="groupRate" placeholder="请输入入群率" step="0.01">
+                <span>%</span>
+            </div>
         </div>
         <div class="item">
             <label>首单单价</label>
@@ -198,14 +209,13 @@
     <div class="tip">
         <strong>规则说明：</strong><br>
         1. 员工身份+复购/TU/荣誉激励三套城市档位独立选择，严格匹配薪酬方案；<br>
-        2. 自动根据首单量、复购/TU/SKU/入群率，匹配4项单项系数；<br>
-        3. 质量系数 = 复购系数×0.3 + TU系数×0.3 + SKU系数×0.2 + 社群系数×0.2；<br>
+        2. 自动根据有效下单、有效复购、拉新TU、买菜订单（SKU）、入群率，匹配4项质量系数；<br>
+        3. 综合质量系数 = 复购质量系数×0.3 + TU质量系数×0.3 + 买菜质量系数×0.2 + 入群率质量系数×0.2；<br>
         4. 订单提成不乘质量系数，仅荣誉激励 × 综合质量系数。
     </div>
 </div>
 
 <script>
-// 荣誉档位配置：[身份][城市] => [[首单门槛,基础奖金]]
 const honorConfig = {
     new: {
         high: [[600,5000],[500,4000],[450,3500],[400,3000],[350,2500],[300,2000],[250,1500],[200,1000],[150,500],[0,0]],
@@ -248,7 +258,6 @@ function getGroupCoeff(rate){
     return 0.5;
 }
 
-// 核心计算函数，增加异常捕获
 function calcSalary(){
     try{
         const staffType = document.getElementById('staffType').value;
@@ -256,11 +265,11 @@ function calcSalary(){
         const cityTu = document.getElementById('cityTu').value;
         const cityHonor = document.getElementById('cityHonor').value;
         const basePay = Number(document.getElementById('basePay').value);
-        const firstOrder = Number(document.getElementById('firstOrder').value);
-        const repOrder = Number(document.getElementById('repOrder').value);
-        const tuOrder = Number(document.getElementById('tuOrder').value);
-        const skuOrder = Number(document.getElementById('skuOrder').value);
-        const groupRateInput = Number(document.getElementById('groupRate').value);
+        const firstOrder = Number(document.getElementById('firstOrder').value || 0);
+        const repOrder = Number(document.getElementById('repOrder').value || 0);
+        const tuOrder = Number(document.getElementById('tuOrder').value || 0);
+        const skuOrder = Number(document.getElementById('skuOrder').value || 0);
+        const groupRateInput = Number(document.getElementById('groupRate').value || 0);
         const groupRate = groupRateInput / 100;
 
         const priceFirst = Number(document.getElementById('priceFirst').value);
@@ -303,15 +312,16 @@ function calcSalary(){
             <div class="line"><span>复购城市档位</span><span>${cityRep==='high'?'高复购城市':'低复购城市'}</span></div>
             <div class="line"><span>TU城市档位</span><span>${cityTu==='high'?'高TU城市':'低TU城市'}</span></div>
             <div class="line"><span>荣誉激励城市档位</span><span>${cityHonor==='high'?'高人效城市':'低人效城市'}</span></div>
-            <div class="line"><span>有效首单量</span><span>${firstOrder} 单</span></div>
+            <div class="line"><span>有效下单</span><span>${firstOrder} 单</span></div>
+            <div class="line"><span>有效复购</span><span>${repOrder} 单</span></div>
             <div class="line"><span>复购率</span><span>${(repRate*100).toFixed(2)}%</span></div>
-            <div class="line"><span>TU占比</span><span>${(tuRate*100).toFixed(2)}%</span></div>
-            <div class="line"><span>SKU买菜占比</span><span>${(skuRate*100).toFixed(2)}%</span></div>
-            <div class="line"><span>社群入群率</span><span>${groupRateInput.toFixed(2)}%</span></div>
-            <div class="line"><span>复购率单项系数</span><span>${coeffRep.toFixed(2)}</span></div>
-            <div class="line"><span>TU占比单项系数</span><span>${coeffTu.toFixed(2)}</span></div>
-            <div class="line"><span>SKU买菜占比系数</span><span>${coeffSku.toFixed(2)}</span></div>
-            <div class="line"><span>社群入群率系数</span><span>${coeffGroup.toFixed(2)}</span></div>
+            <div class="line"><span>拉新TU占比</span><span>${(tuRate*100).toFixed(2)}%</span></div>
+            <div class="line"><span>买菜订单（SKU）占比</span><span>${(skuRate*100).toFixed(2)}%</span></div>
+            <div class="line"><span>入群率</span><span>${groupRateInput.toFixed(2)}%</span></div>
+            <div class="line"><span>复购质量系数</span><span>${coeffRep.toFixed(2)}</span></div>
+            <div class="line"><span>TU质量系数</span><span>${coeffTu.toFixed(2)}</span></div>
+            <div class="line"><span>买菜质量系数</span><span>${coeffSku.toFixed(2)}</span></div>
+            <div class="line"><span>入群率质量系数</span><span>${coeffGroup.toFixed(2)}</span></div>
             <div class="line"><span>✅综合质量系数</span><span>${qualityRate.toFixed(4)}</span></div>
             <div class="line"><span>首单提成</span><span>${firstCommission.toFixed(2)} 元</span></div>
             <div class="line"><span>复购提成</span><span>${repCommission.toFixed(2)} 元</span></div>
@@ -328,10 +338,10 @@ function calcSalary(){
     }
 }
 
-// 改用addEventListener绑定点击事件，兼容GitHub Pages环境，摒弃行内onclick
 document.getElementById('calcBtn').addEventListener('click', calcSalary);
-// 页面加载自动执行一次
-window.addEventListener('load', calcSalary);
+window.addEventListener('load', ()=>{
+    document.getElementById("result").innerHTML = "<div style='color:#666'>请填写数据后点击计算薪资</div>";
+});
 </script>
 </body>
 </html>
