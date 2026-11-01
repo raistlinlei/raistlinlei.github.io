@@ -1,0 +1,3093 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>世界杯 48强 · 玩家对战</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{
+    margin:0;padding:0;background:#0a0e14;color:#ddd;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    min-height:100vh;
+  }
+  .screen{display:none;flex-direction:column;align-items:center;padding:14px}
+  .screen.active{display:flex}
+
+  #menuScreen{justify-content:center;min-height:100vh}
+  .card{
+    background:#141a22;border:1px solid #2a3342;border-radius:16px;
+    padding:28px 32px;max-width:920px;width:100%;
+  }
+  h1{margin:0 0 6px;font-size:26px;color:#e6edf3;text-align:center}
+  .sub{margin:0 0 22px;color:#7d8590;font-size:13px;text-align:center}
+  .mode-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+  .mode-btn{
+    flex:1;min-width:180px;padding:14px 18px;border-radius:12px;
+    background:linear-gradient(180deg,#1f6feb,#1857c4);border:1px solid #388bfd;
+    color:#fff;cursor:pointer;font-size:15px;font-weight:700;transition:.15s;
+  }
+  .mode-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(31,111,235,.4)}
+  .mode-btn.selected{background:linear-gradient(180deg,#2ea043,#1e7c33);border-color:#3fb950}
+  .mode-btn small{display:block;font-weight:400;font-size:12px;opacity:.85;margin-top:3px}
+
+  .team-select{margin:18px 0}
+  .team-select label{display:block;font-size:13px;color:#8b949e;margin-bottom:6px}
+  select{
+    width:100%;padding:10px 12px;border-radius:8px;background:#0d1117;color:#e6edf3;
+    border:1px solid #30363d;font-size:14px;
+  }
+  .start-btn{
+    width:100%;padding:14px;border-radius:12px;font-size:16px;font-weight:700;
+    background:linear-gradient(180deg,#d29922,#bb8009);border:0;color:#fff;cursor:pointer;
+    margin-top:10px;transition:.15s;
+  }
+  .start-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 20px rgba(210,153,34,.4)}
+  .start-btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .info-note{
+    margin-top:16px;padding:12px 16px;background:#0d1117;border:1px solid #21262d;
+    border-radius:10px;font-size:12px;color:#8b949e;line-height:1.9;
+  }
+  .info-note b{color:#c9d1d9}
+
+  #tournamentScreen{width:100%;min-height:100vh}
+  .t-header{
+    width:100%;max-width:1280px;display:flex;flex-wrap:wrap;
+    justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;
+    background:#141a22;border:1px solid #2a3342;border-radius:12px;padding:12px 18px;
+  }
+  .t-title{font-size:18px;font-weight:800;color:#e6edf3}
+  .t-title small{display:block;font-size:12px;font-weight:400;color:#7d8590;margin-top:2px}
+  .t-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{
+    padding:8px 16px;border-radius:8px;border:0;cursor:pointer;font-size:13px;
+    font-weight:600;transition:.15s;
+  }
+  .btn.primary{background:#1f6feb;color:#fff}
+  .btn.primary:hover{background:#388bfd}
+  .btn.gold{background:linear-gradient(180deg,#d29922,#bb8009);color:#fff}
+  .btn.gold:hover{filter:brightness(1.1)}
+  .btn.ghost{background:#21262d;color:#c9d1d9;border:1px solid #30363d}
+  .btn.ghost:hover{background:#30363d}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .t-body{
+    width:100%;max-width:1280px;display:grid;
+    grid-template-columns:1fr 1fr;gap:14px;
+  }
+  @media(max-width:900px){.t-body{grid-template-columns:1fr}}
+
+  .panel{
+    background:#141a22;border:1px solid #2a3342;border-radius:12px;
+    padding:14px 16px;overflow:auto;max-height:72vh;
+  }
+  .panel h3{
+    margin:0 0 10px;font-size:14px;color:#e6edf3;
+    border-bottom:1px solid #21262d;padding-bottom:8px;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .panel h3 span{font-size:11px;font-weight:400;color:#7d8590}
+
+  .group-box{
+    margin-bottom:14px;background:#0d1117;border:1px solid #21262d;
+    border-radius:8px;padding:8px 10px;
+  }
+  .group-box .gt{
+    font-size:12px;font-weight:700;color:#79c0ff;margin-bottom:6px;
+    display:flex;justify-content:space-between;
+  }
+  .group-table{width:100%;font-size:11px;border-collapse:collapse}
+  .group-table th{
+    color:#7d8590;font-weight:500;text-align:center;padding:2px 3px;
+    border-bottom:1px solid #21262d;font-size:10px;
+  }
+  .group-table th:first-child{text-align:left}
+  .group-table td{
+    padding:2px 3px;text-align:center;border-bottom:1px solid #161b22;
+  }
+  .group-table td:first-child{text-align:left;font-weight:600}
+  .group-table tr.qual{color:#7ee787}
+  .group-table tr.qual td:first-child::before{content:"▸ ";color:#7ee787}
+  .group-table tr.third-q{color:#ffd54a}
+  .group-table tr.third-q td:first-child::before{content:"▸ ";color:#ffd54a}
+
+  .match-row{
+    display:flex;align-items:center;gap:8px;padding:4px 6px;
+    border-radius:6px;font-size:12px;margin-bottom:2px;
+    background:#0d1117;
+  }
+  .match-row .mt{flex:1;text-align:right;color:#c9d1d9;font-weight:600}
+  .match-row .ms{
+    background:#161b22;border:1px solid #30363d;border-radius:5px;
+    padding:1px 8px;font-family:monospace;font-size:12px;color:#fff;
+    min-width:52px;text-align:center;
+  }
+  .match-row .ma{flex:1;text-align:left;color:#c9d1d9;font-weight:600}
+  .match-row.played .ms{background:#1f6feb;border-color:#388bfd}
+  .match-row.player-match{background:#1c2128;border-left:3px solid #d29922}
+  .match-row .pko{font-size:10px;color:#ffa657}
+  .match-row .tag{
+    display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;
+    background:#21262d;color:#8b949e;margin-left:3px;
+  }
+
+  #matchScreen{width:100%;min-height:100vh;justify-content:center}
+  #matchCanvas{
+    max-width:100%;height:auto;display:block;border-radius:10px;
+    box-shadow:0 18px 50px rgba(0,0,0,.7);
+  }
+  .match-bar{
+    margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  }
+  .match-tip{
+    margin-top:10px;font-size:12px;color:#7d8590;text-align:center;line-height:1.8;
+    max-width:900px;
+  }
+  .k{display:inline-block;background:#21262d;border:1px solid #30363d;
+    border-radius:4px;padding:0 6px;margin:0 1px;font-family:monospace;
+    color:#c9d1d9;font-size:11px}
+  .p1c{color:#7fb3ff}
+  .p2c{color:#ff9d9d}
+
+  #lineupOverlay{
+    position:fixed;inset:0;background:rgba(6,10,16,.94);z-index:150;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    overflow-y:auto;
+  }
+  #lineupOverlay.active{display:flex}
+  .lineup-box{
+    background:#161b22;border:1px solid #30363d;border-radius:16px;
+    padding:20px 22px;max-width:560px;width:100%;
+    box-shadow:0 24px 60px rgba(0,0,0,.7);
+    margin:auto;
+  }
+  .lineup-header{text-align:center;margin-bottom:14px}
+  .lineup-header h2{margin:0 0 4px;color:#e6edf3;font-size:19px}
+  .lineup-sub{font-size:13px;color:#7d8590}
+
+  .formation-row{
+    display:flex;align-items:center;gap:8px;margin-bottom:12px;
+    font-size:13px;color:#8b949e;flex-wrap:wrap;
+  }
+  .formation-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .formation-tabs button{
+    background:#21262d;color:#c9d1d9;border:1px solid #30363d;
+    border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;
+    transition:.15s;font-family:monospace;
+  }
+  .formation-tabs button:hover{background:#30363d}
+  .formation-tabs button.active{
+    background:#1f6feb;border-color:#388bfd;color:#fff;font-weight:700;
+  }
+
+  .mini-pitch{
+    position:relative;width:100%;aspect-ratio:105/68;
+    background:repeating-linear-gradient(90deg,#2d8a3c 0,#2d8a3c 10%,#33993f 10%,#33993f 20%);
+    border-radius:8px;border:2px solid rgba(255,255,255,.4);
+    overflow:hidden;margin-bottom:10px;
+  }
+  .mini-pitch::before{
+    content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;
+    background:rgba(255,255,255,.35);transform:translateX(-1px);
+  }
+  .mini-pitch::after{
+    content:'';position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;
+    border:2px solid rgba(255,255,255,.35);border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .slot{
+    position:absolute;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;
+    cursor:pointer;user-select:none;z-index:2;
+    transition:.12s;
+  }
+  .slot.locked{cursor:not-allowed}
+  .slot.locked .slot-dot{filter:brightness(.9)}
+  .slot.selected .slot-dot{
+    box-shadow:0 0 0 4px rgba(255,240,90,.7);
+    transform:scale(1.15);
+  }
+  .slot-dot{
+    width:28px;height:28px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;color:#fff;
+    border:2px solid rgba(0,0,0,.55);
+    transition:.12s;
+  }
+  .slot-dot.gk{background:#ffd54a;color:#333}
+  .slot-dot.df{background:#2b6cff}
+  .slot-dot.mf{background:#2ea043}
+  .slot-dot.fw{background:#e63946}
+  .slot-label{
+    font-size:9px;color:#fff;margin-top:2px;
+    background:rgba(0,0,0,.6);padding:0 4px;border-radius:3px;
+    white-space:nowrap;
+  }
+  .lineup-hint{
+    text-align:center;font-size:11px;color:#7d8590;margin-bottom:12px;
+  }
+
+  /* ---------- 点球大战 ---------- */
+  #penaltyOverlay{
+    position:fixed;inset:0;background:rgba(6,10,16,.96);z-index:170;
+    display:none;align-items:center;justify-content:center;padding:16px;
+    overflow-y:auto;
+  }
+  #penaltyOverlay.active{display:flex}
+  .pk-box{
+    background:#161b22;border:1px solid #30363d;border-radius:16px;
+    padding:18px 22px 16px;max-width:440px;width:100%;
+    box-shadow:0 24px 60px rgba(0,0,0,.8);text-align:center;margin:auto;
+  }
+  .pk-box h2{margin:0 0 8px;color:#ffd54a;font-size:20px;letter-spacing:2px}
+  .pk-score{
+    display:flex;justify-content:center;align-items:center;gap:14px;
+    font-size:18px;font-weight:800;margin-bottom:6px;
+  }
+  .pk-team-a{color:#7fb3ff}
+  .pk-team-b{color:#ff9d9d}
+  .pk-score-val{color:#fff;font-family:monospace;font-size:22px}
+  .pk-round{font-size:13px;color:#8b949e;margin-bottom:10px}
+  #pkCanvas{
+    display:block;margin:0 auto 10px;border-radius:8px;
+    background:#1d5e2a;box-shadow:inset 0 0 30px rgba(0,0,0,.4);
+  }
+  .pk-info{
+    font-size:14px;color:#ffd54a;font-weight:600;
+    margin-bottom:8px;min-height:20px;
+  }
+  .pk-controls{
+    font-size:11px;color:#7d8590;margin-bottom:10px;
+  }
+  .pk-history{
+    display:flex;flex-direction:column;gap:4px;
+    border-top:1px solid #21262d;padding-top:8px;
+  }
+  .pk-hist-row{
+    display:flex;align-items:center;gap:6px;font-size:12px;
+  }
+  .pk-hist-team{
+    width:64px;text-align:right;color:#8b949e;font-size:11px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .pk-dot{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:800;
+  }
+  .pk-dot-goal{background:#2ea043;color:#fff}
+  .pk-dot-miss{background:#7a1f1f;color:#ffb1b1}
+  .pk-dot-empty{background:#21262d;color:#484f58}
+
+  #resultOverlay{
+    position:fixed;inset:0;background:rgba(6,10,16,.94);z-index:160;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  #resultOverlay.active{display:flex}
+  .result-box{
+    background:#161b22;border:1px solid #30363d;border-radius:16px;
+    padding:26px 32px 22px;text-align:center;max-width:560px;width:100%;
+    box-shadow:0 24px 60px rgba(0,0,0,.7);
+  }
+  .result-box h2{margin:0 0 8px;color:#e6edf3;font-size:20px}
+  .result-teams{
+    display:flex;justify-content:center;align-items:center;gap:14px;
+    font-size:15px;color:#c9d1d9;margin-bottom:4px;
+  }
+  .result-teams .a{color:#7fb3ff;font-weight:700}
+  .result-teams .b{color:#ff9d9d;font-weight:700}
+  .result-score{
+    font-size:34px;font-weight:800;margin:6px 0;
+    color:#ffd54a;font-family:monospace;letter-spacing:2px;
+  }
+  .result-pen-info{
+    font-size:13px;color:#ffa657;margin-bottom:16px;
+  }
+  .stats-table{
+    width:100%;margin:12px 0 20px;font-size:13px;
+    border-collapse:collapse;color:#c9d1d9;
+  }
+  .stats-table th{
+    color:#7d8590;font-weight:500;padding:6px 8px;
+    font-size:12px;border-bottom:1px solid #30363d;
+  }
+  .stats-table th.team-a{color:#7fb3ff;font-weight:700}
+  .stats-table th.team-b{color:#ff9d9d;font-weight:700}
+  .stats-table td{
+    padding:5px 8px;border-bottom:1px solid #21262d;
+  }
+  .stats-table td.label{color:#8b949e;font-size:12px;text-align:left}
+  .stats-table td.val{font-family:monospace;font-size:14px;font-weight:700}
+  .stats-table td.a{color:#7fb3ff;text-align:center}
+  .stats-table td.b{color:#ff9d9d;text-align:center}
+</style>
+</head>
+<body>
+
+<div id="menuScreen" class="screen active">
+  <div class="card">
+    <h1>⚽ 世界杯 · 48 强</h1>
+    <p class="sub">FIFA 排名 1-68 · 前 24 自动晋级 · 后 44 随机晋级 · 12 组 · 每组 4 队 · 淘汰赛 32 强</p>
+
+    <div class="mode-row">
+      <button class="mode-btn" data-mode="single" id="btnSingle">
+        单人游戏
+        <small>你 vs 电脑</small>
+      </button>
+      <button class="mode-btn" data-mode="multi" id="btnMulti">
+        多人游戏
+        <small>两名玩家对战</small>
+      </button>
+    </div>
+
+    <div class="team-select" id="selectRow1">
+      <label>玩家 1 球队（蓝方 · WASD 移动 + J 传球 + 空格 射门）</label>
+      <select id="teamSelect1"></select>
+    </div>
+
+    <div class="team-select" id="selectRow2" style="display:none">
+      <label>玩家 2 球队（红方 · 方向键移动 + . 传球 + / 射门）</label>
+      <select id="teamSelect2"></select>
+    </div>
+
+    <button class="start-btn" id="startBtn" disabled>开始世界杯</button>
+
+    <div class="info-note">
+      <b>比赛操作：</b><br>
+      <span class="p1c">■ 玩家 1（蓝方）</span>：<span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> 移动 ·
+      <span class="k">J</span> 传球 · <span class="k">空格</span> 射门<br>
+      <span class="p2c">■ 玩家 2（红方）</span>：<span class="k">↑</span><span class="k">↓</span><span class="k">←</span><span class="k">→</span> 移动 ·
+      <span class="k">.</span> 传球 · <span class="k">/</span> 射门<br>
+      <b>点球大战：</b>由玩家实时操作，方向键选择射门/扑救方向，空格确认。<br>
+      <b>季军赛：</b>半决赛败者进行季军赛，决赛前进行。<br>
+      <b>淘汰赛对阵：</b>遵循 2026 美加墨世界杯规则，小组第一/第二按固定位置配对，8 个成绩最好的小组第三落位。<br>
+      <b>AI 阵型：</b>AI 球队会随机选择符合自身风格的阵型（如法国 4-4-2、西班牙 4-3-3）。<br>
+      <b>赛后统计：</b>控球率、射门、射正、传球、角球、犯规、红黄牌等数据。
+    </div>
+  </div>
+</div>
+
+<div id="tournamentScreen" class="screen">
+  <div class="t-header">
+    <div class="t-title" id="tTitle">世界杯</div>
+    <div class="t-actions">
+      <button class="btn gold" id="playBtn">▶ 进行本轮</button>
+      <button class="btn ghost" id="autoBtn">⏩ 自动模拟剩余</button>
+      <button class="btn ghost" id="backMenuBtn">返回菜单</button>
+    </div>
+  </div>
+
+  <div class="t-body">
+    <div class="panel">
+      <h3>📋 小组赛 <span id="groupInfo"></span></h3>
+      <div id="groupsList"></div>
+    </div>
+    <div class="panel">
+      <h3>🏆 淘汰赛 <span id="koInfo"></span></h3>
+      <div id="koList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="matchScreen" class="screen">
+  <canvas id="matchCanvas"></canvas>
+  <div class="match-bar">
+    <button class="btn ghost" id="mPause">暂停 / 继续</button>
+    <button class="btn ghost" id="mSpeed">速度 ×1</button>
+  </div>
+  <div class="match-tip" id="matchTip">
+    <span class="p1c">P1（蓝）</span> WASD + J/空格 &nbsp;|&nbsp;
+    <span class="p2c">P2（红）</span> 方向键 + . / &nbsp;|&nbsp;
+    高亮圈标出当前操控球员
+  </div>
+</div>
+
+<div id="lineupOverlay">
+  <div class="lineup-box">
+    <div class="lineup-header">
+      <h2 id="lineupTitle">选择阵容</h2>
+      <div class="lineup-sub" id="lineupSub"></div>
+    </div>
+    <div class="formation-row">
+      <span>阵型：</span>
+      <div class="formation-tabs" id="formationTabs"></div>
+    </div>
+    <div class="mini-pitch" id="miniPitch"></div>
+    <div class="lineup-hint">点击两个位置可互换球员 · GK 位置已锁定不可移动</div>
+    <button class="btn gold" id="confirmLineup" style="width:100%;padding:12px;font-size:15px">确认阵容</button>
+  </div>
+</div>
+
+<!-- 点球大战 -->
+<div id="penaltyOverlay">
+  <div class="pk-box">
+    <h2>⚽ 点球大战</h2>
+    <div class="pk-score">
+      <span class="pk-team-a" id="pkTeamA">蓝队</span>
+      <span class="pk-score-val" id="pkScore">0 - 0</span>
+      <span class="pk-team-b" id="pkTeamB">红队</span>
+    </div>
+    <div class="pk-round" id="pkRound">第 1 轮</div>
+    <canvas id="pkCanvas" width="360" height="220"></canvas>
+    <div class="pk-info" id="pkInfo">准备中...</div>
+    <div class="pk-controls">方向键选择 · 空格确认</div>
+    <div class="pk-history" id="pkHistory"></div>
+  </div>
+</div>
+
+<div id="resultOverlay">
+  <div class="result-box">
+    <h2 id="resultTitle">比赛结束</h2>
+    <div class="result-teams">
+      <span class="a" id="resultTeamA">蓝队</span>
+      <span style="color:#7d8590">vs</span>
+      <span class="b" id="resultTeamB">红队</span>
+    </div>
+    <div class="result-score" id="resultScore">0 - 0</div>
+    <div class="result-pen-info" id="resultPenInfo"></div>
+    <table class="stats-table" id="statsTable"></table>
+    <button class="btn gold" id="resultContinue" style="width:100%;padding:12px;font-size:15px">继续</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* =========================================================
+   1. 球队数据
+   ========================================================= */
+const TEAM_NAMES = [
+  '米奇','西班牙','英格兰','水莲','阿根廷','马奇','摩洛哥','法国',
+  '比利时','莉莉艾','小光','葡萄牙','企鹅','瑞典','杨威利','瑞士',
+  '荷兰','土耳其','小智','艾路雷朵','德国','丹帝','小遥','路易吉',
+  '冰企','吉尔菲艾斯','莱因哈特','索林','甘道夫','烈焰人','波洛米尔',
+  '天行者','欧比旺','阿拉贡','末影人','罗莎塔','舞象','快乐恶魂',
+  '足莉娜','堕拉攻','恶魂','马奇奥奇','旋风人','村民','铁傀儡',
+  '小刚','小霞','苦力怕','耀西','烈咬陆鲨','企太','苏格兰','埃及',
+  '意大利','威尔士','监守者','尤里安','路奇奥奇','挪威','玛奥',
+  '卡奇','马里奥','堕拉','腹肌利','强腕','欧婆婆','匈牙利','奥地利'
+];
+const TEAM_RATINGS = TEAM_NAMES.map((_, i) => 92 - Math.pow(i/67, 1.2) * 32);
+
+/* =========================================================
+   2. 难度参数
+   ========================================================= */
+const DIFF = {
+  AI_SPEED_MUL:      0.90,
+  AI_SPRINT_MUL:     1.15,
+  HUMAN_SPEED_MUL:   0.95,
+  AI_DECISION_MIN:   0.13,
+  AI_DECISION_MAX:   0.32,
+  AI_PASS_CHANCE:    0.60,
+  AI_SHOOT_RANGE_M:  30,
+  AI_SHOOT_SPREAD:   18,
+  AI_PASS_SPREAD:    0.03,
+  AI_TACKLE_BASE:    0.52,
+  AI_TACKLE_SKILL:   0.75,
+  AI_GK_RUSH_RANGE_M:50,
+  AI_DOUBLE_PRESS:   true,
+};
+
+/* =========================================================
+   3. 球员名单与阵型
+   ========================================================= */
+const DEFAULT_ROSTER = [
+  {role:'GK', num:1 },
+  {role:'DF', num:2 },
+  {role:'DF', num:5 },
+  {role:'DF', num:4 },
+  {role:'DF', num:3 },
+  {role:'MF', num:7 },
+  {role:'MF', num:8 },
+  {role:'MF', num:6 },
+  {role:'MF', num:11},
+  {role:'FW', num:9 },
+  {role:'FW', num:10},
+];
+
+const FORMATIONS = {
+  '4-4-2': [
+    {role:'GK', fx:0.06, fy:0.50, label:'门将'},
+    {role:'DF', fx:0.22, fy:0.16, label:'左后卫'},
+    {role:'DF', fx:0.18, fy:0.38, label:'中后卫'},
+    {role:'DF', fx:0.18, fy:0.62, label:'中后卫'},
+    {role:'DF', fx:0.22, fy:0.84, label:'右后卫'},
+    {role:'MF', fx:0.45, fy:0.16, label:'左前卫'},
+    {role:'MF', fx:0.42, fy:0.40, label:'中前卫'},
+    {role:'MF', fx:0.42, fy:0.60, label:'中前卫'},
+    {role:'MF', fx:0.45, fy:0.84, label:'右前卫'},
+    {role:'FW', fx:0.70, fy:0.36, label:'前锋'},
+    {role:'FW', fx:0.70, fy:0.64, label:'前锋'},
+  ],
+  '4-3-3': [
+    {role:'GK', fx:0.06, fy:0.50, label:'门将'},
+    {role:'DF', fx:0.22, fy:0.16, label:'左后卫'},
+    {role:'DF', fx:0.18, fy:0.38, label:'中后卫'},
+    {role:'DF', fx:0.18, fy:0.62, label:'中后卫'},
+    {role:'DF', fx:0.22, fy:0.84, label:'右后卫'},
+    {role:'MF', fx:0.42, fy:0.24, label:'中场'},
+    {role:'MF', fx:0.40, fy:0.50, label:'后腰'},
+    {role:'MF', fx:0.42, fy:0.76, label:'中场'},
+    {role:'FW', fx:0.68, fy:0.20, label:'左边锋'},
+    {role:'FW', fx:0.74, fy:0.50, label:'中锋'},
+    {role:'FW', fx:0.68, fy:0.80, label:'右边锋'},
+  ],
+  '3-5-2': [
+    {role:'GK', fx:0.06, fy:0.50, label:'门将'},
+    {role:'DF', fx:0.18, fy:0.25, label:'中后卫'},
+    {role:'DF', fx:0.16, fy:0.50, label:'中后卫'},
+    {role:'DF', fx:0.18, fy:0.75, label:'中后卫'},
+    {role:'MF', fx:0.42, fy:0.10, label:'左翼卫'},
+    {role:'MF', fx:0.40, fy:0.34, label:'中场'},
+    {role:'MF', fx:0.38, fy:0.50, label:'后腰'},
+    {role:'MF', fx:0.40, fy:0.66, label:'中场'},
+    {role:'MF', fx:0.42, fy:0.90, label:'右翼卫'},
+    {role:'FW', fx:0.70, fy:0.36, label:'前锋'},
+    {role:'FW', fx:0.70, fy:0.64, label:'前锋'},
+  ],
+  '4-2-3-1': [
+    {role:'GK', fx:0.06, fy:0.50, label:'门将'},
+    {role:'DF', fx:0.22, fy:0.16, label:'左后卫'},
+    {role:'DF', fx:0.18, fy:0.38, label:'中后卫'},
+    {role:'DF', fx:0.18, fy:0.62, label:'中后卫'},
+    {role:'DF', fx:0.22, fy:0.84, label:'右后卫'},
+    {role:'MF', fx:0.38, fy:0.40, label:'后腰'},
+    {role:'MF', fx:0.38, fy:0.60, label:'后腰'},
+    {role:'MF', fx:0.56, fy:0.20, label:'左前卫'},
+    {role:'MF', fx:0.56, fy:0.50, label:'前腰'},
+    {role:'MF', fx:0.56, fy:0.80, label:'右前卫'},
+    {role:'FW', fx:0.76, fy:0.50, label:'中锋'},
+  ],
+  '5-3-2': [
+    {role:'GK', fx:0.06, fy:0.50, label:'门将'},
+    {role:'DF', fx:0.20, fy:0.10, label:'左翼卫'},
+    {role:'DF', fx:0.16, fy:0.30, label:'中后卫'},
+    {role:'DF', fx:0.14, fy:0.50, label:'中后卫'},
+    {role:'DF', fx:0.16, fy:0.70, label:'中后卫'},
+    {role:'DF', fx:0.20, fy:0.90, label:'右翼卫'},
+    {role:'MF', fx:0.42, fy:0.28, label:'中场'},
+    {role:'MF', fx:0.40, fy:0.50, label:'中场'},
+    {role:'MF', fx:0.42, fy:0.72, label:'中场'},
+    {role:'FW', fx:0.70, fy:0.36, label:'前锋'},
+    {role:'FW', fx:0.70, fy:0.64, label:'前锋'},
+  ],
+};
+
+/* =========================================================
+   4. 球队阵型池
+   ========================================================= */
+const TEAM_FORMATION_POOL = {
+  2:  ['4-3-3', '4-3-3', '4-2-3-1'],
+  3:  ['4-3-3', '4-2-3-1'],
+  5:  ['4-3-3', '4-4-2'],
+  7:  ['4-3-3', '5-3-2'],
+  8:  ['4-4-2', '4-2-3-1', '4-3-3'],
+  9:  ['4-2-3-1', '3-5-2'],
+  12: ['4-3-3', '4-4-2'],
+  14: ['4-4-2'],
+  16: ['4-2-3-1', '4-4-2'],
+  17: ['4-3-3'],
+  18: ['4-2-3-1', '4-3-3'],
+  21: ['4-2-3-1', '4-3-3'],
+  52: ['4-4-2', '3-5-2'],
+  53: ['4-2-3-1'],
+  54: ['3-5-2', '4-3-3'],
+  55: ['3-5-2', '4-2-3-1'],
+  59: ['4-4-2', '4-3-3'],
+  67: ['3-5-2'],
+  68: ['4-2-3-1', '4-4-2'],
+  4:  ['4-3-3', '4-4-2'],
+  10: ['4-2-3-1', '4-3-3'],
+  11: ['4-4-2', '4-3-3'],
+  19: ['4-3-3', '4-4-2'],
+  20: ['4-4-2', '3-5-2'],
+  22: ['4-3-3', '4-2-3-1'],
+  23: ['4-2-3-1', '4-4-2'],
+  46: ['4-4-2', '5-3-2'],
+  47: ['4-3-3', '4-2-3-1'],
+  60: ['4-3-3', '4-4-2'],
+  61: ['4-4-2', '4-2-3-1'],
+  1:  ['4-4-2'],
+  6:  ['4-2-3-1', '4-3-3'],
+  13: ['5-3-2', '4-4-2'],
+  15: ['4-4-2', '3-5-2'],
+  24: ['4-4-2', '5-3-2'],
+  25: ['5-3-2', '4-4-2'],
+  26: ['4-2-3-1', '4-3-3'],
+  27: ['4-3-3', '4-2-3-1'],
+  28: ['4-2-3-1', '4-3-3'],
+  29: ['4-3-3', '3-5-2'],
+  30: ['4-3-3', '4-2-3-1'],
+  31: ['4-4-2', '5-3-2'],
+  32: ['4-3-3', '4-2-3-1'],
+  33: ['4-2-3-1', '4-4-2'],
+  34: ['4-4-2', '3-5-2'],
+  35: ['4-4-2', '5-3-2'],
+  36: ['4-3-3', '4-2-3-1'],
+  37: ['4-3-3', '4-4-2'],
+  38: ['4-3-3', '4-2-3-1'],
+  39: ['4-3-3', '4-4-2'],
+  40: ['5-3-2', '4-4-2'],
+  41: ['5-3-2', '4-4-2'],
+  42: ['4-4-2', '4-2-3-1'],
+  43: ['4-3-3', '4-4-2'],
+  44: ['4-4-2', '5-3-2'],
+  45: ['5-3-2', '4-4-2'],
+  48: ['4-3-3', '4-2-3-1'],
+  49: ['4-3-3', '4-4-2'],
+  50: ['4-3-3', '4-2-3-1'],
+  51: ['5-3-2', '4-4-2'],
+  56: ['5-3-2', '4-4-2'],
+  57: ['4-2-3-1', '4-3-3'],
+  58: ['4-3-3', '4-4-2'],
+  62: ['4-3-3', '4-4-2'],
+  63: ['4-4-2', '5-3-2'],
+  64: ['4-3-3', '4-2-3-1'],
+  65: ['5-3-2', '4-4-2'],
+  66: ['4-4-2', '5-3-2'],
+};
+
+/* =========================================================
+   5. 全局状态
+   ========================================================= */
+let gameMode = null;
+let playerTeams = [];
+let tournamentOver = false;
+let champion = null;
+
+let qualified = [];
+let groups = [];
+let groupMatches = [];
+let standings = [];
+
+let koRounds = [];
+let koStageIdx = 0;
+let currentStage = 'group';
+let groupRound = 0;
+
+/* =========================================================
+   6. 工具函数
+   ========================================================= */
+const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+const rand  = (a,b)=> a + Math.random()*(b-a);
+const dist  = (ax,ay,bx,by)=> Math.hypot(ax-bx, ay-by);
+const $ = id => document.getElementById(id);
+
+function shuffle(arr){
+  const a = [...arr];
+  for (let i=a.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function poisson(lambda){
+  if (lambda <= 0) return 0;
+  const L = Math.exp(-lambda);
+  let k = 0, p = 1;
+  do { k++; p *= Math.random(); } while (p > L);
+  return k-1;
+}
+
+/* =========================================================
+   7. 阵容工具
+   ========================================================= */
+function autoFillLineup(formationKey){
+  const slots = FORMATIONS[formationKey];
+  const result = [];
+  const used = new Set();
+  const gk = DEFAULT_ROSTER.find(p => p.role === 'GK');
+  used.add(gk.num);
+
+  for (const slot of slots){
+    if (slot.role === 'GK'){
+      result.push({
+        role: gk.role, num: gk.num,
+        fx: slot.fx, fy: slot.fy,
+        slotLabel: slot.label, slotRole: slot.role
+      });
+      continue;
+    }
+    let pick = null;
+    for (const p of DEFAULT_ROSTER){
+      if (used.has(p.num)) continue;
+      if (p.role === slot.role){ pick = p; break; }
+    }
+    if (!pick){
+      const fallback = { DF:['MF','FW'], MF:['DF','FW'], FW:['MF','DF'] }[slot.role] || [];
+      for (const r of fallback){
+        for (const p of DEFAULT_ROSTER){
+          if (used.has(p.num)) continue;
+          if (p.role === r){ pick = p; break; }
+        }
+        if (pick) break;
+      }
+    }
+    if (!pick){
+      for (const p of DEFAULT_ROSTER){
+        if (!used.has(p.num)){ pick = p; break; }
+      }
+    }
+    if (pick){
+      used.add(pick.num);
+      result.push({
+        role: pick.role, num: pick.num,
+        fx: slot.fx, fy: slot.fy,
+        slotLabel: slot.label, slotRole: slot.role
+      });
+    }
+  }
+  return result;
+}
+
+function pickAILineup(teamIdx){
+  const pool = TEAM_FORMATION_POOL[teamIdx] || ['4-4-2', '4-3-3', '4-2-3-1'];
+  const formation = pool[Math.floor(Math.random() * pool.length)];
+  return autoFillLineup(formation);
+}
+
+/* =========================================================
+   8. 阵容选择界面
+   ========================================================= */
+let currentLineupState = null;
+let lineupQueue = [];
+let lineupResults = {};
+let currentMatchContext = null;
+
+function showLineupForTeam(teamIdx, slot, side){
+  const state = {
+    teamIdx, slot, side,
+    formation: '4-4-2',
+    lineup: autoFillLineup('4-4-2'),
+    selectedIdx: null
+  };
+  currentLineupState = state;
+  renderLineupScreen(state);
+  $('lineupOverlay').classList.add('active');
+}
+
+function renderLineupScreen(state){
+  const teamName = TEAM_NAMES[state.teamIdx];
+  $('lineupTitle').textContent = `玩家 ${state.slot+1} · 选择阵容`;
+  $('lineupSub').textContent = `${teamName} · ${state.side === 'home' ? '主队' : '客队'}`;
+
+  const tabsEl = $('formationTabs');
+  tabsEl.innerHTML = '';
+  for (const key of Object.keys(FORMATIONS)){
+    const btn = document.createElement('button');
+    btn.textContent = key;
+    btn.classList.toggle('active', key === state.formation);
+    btn.addEventListener('click', () => {
+      state.lineup = autoFillLineup(key);
+      state.formation = key;
+      state.selectedIdx = null;
+      renderLineupScreen(state);
+    });
+    tabsEl.appendChild(btn);
+  }
+
+  const pitchEl = $('miniPitch');
+  pitchEl.innerHTML = '';
+  state.lineup.forEach((entry, idx) => {
+    const slotEl = document.createElement('div');
+    slotEl.className = 'slot';
+    if (entry.slotRole === 'GK') slotEl.classList.add('locked');
+    if (state.selectedIdx === idx) slotEl.classList.add('selected');
+    slotEl.style.left = (entry.fx * 100) + '%';
+    slotEl.style.top  = (entry.fy * 100) + '%';
+    slotEl.dataset.idx = idx;
+
+    const dot = document.createElement('div');
+    dot.className = 'slot-dot ' + entry.role.toLowerCase();
+    dot.textContent = entry.num;
+    slotEl.appendChild(dot);
+
+    const label = document.createElement('div');
+    label.className = 'slot-label';
+    label.textContent = entry.slotLabel;
+    slotEl.appendChild(label);
+
+    slotEl.addEventListener('click', () => handleSlotClick(state, idx));
+    pitchEl.appendChild(slotEl);
+  });
+}
+
+function handleSlotClick(state, idx){
+  if (state.lineup[idx].slotRole === 'GK') return;
+
+  if (state.selectedIdx === null || state.selectedIdx === undefined){
+    state.selectedIdx = idx;
+  } else if (state.selectedIdx === idx){
+    state.selectedIdx = null;
+  } else {
+    const selIdx = state.selectedIdx;
+    if (state.lineup[selIdx].slotRole === 'GK'){
+      state.selectedIdx = idx;
+    } else {
+      const a = state.lineup[selIdx];
+      const b = state.lineup[idx];
+      [a.fx, b.fx] = [b.fx, a.fx];
+      [a.fy, b.fy] = [b.fy, a.fy];
+      [a.slotLabel, b.slotLabel] = [b.slotLabel, a.slotLabel];
+      [a.slotRole, b.slotRole] = [b.slotRole, a.slotRole];
+      state.selectedIdx = null;
+    }
+  }
+  renderLineupScreen(state);
+}
+
+$('confirmLineup').addEventListener('click', () => {
+  if (!currentLineupState) return;
+  const side = currentLineupState.side;
+  lineupResults[side] = currentLineupState.lineup;
+  $('lineupOverlay').classList.remove('active');
+  currentLineupState = null;
+  nextLineup();
+});
+
+function nextLineup(){
+  if (lineupQueue.length === 0){
+    const ctx = currentMatchContext;
+    currentMatchContext = null;
+    startLiveMatch(
+      ctx.homeIdx, ctx.awayIdx, ctx.isKnockout,
+      lineupResults['home'] || null,
+      lineupResults['away'] || null
+    );
+    return;
+  }
+  const cur = lineupQueue.shift();
+  showLineupForTeam(cur.teamIdx, cur.slot, cur.side);
+}
+
+function startLiveMatchWithLineups(homeIdx, awayIdx, isKnockout){
+  const humanTeams = [];
+  if (playerTeams.includes(homeIdx)){
+    humanTeams.push({teamIdx: homeIdx, slot: playerTeams.indexOf(homeIdx), side: 'home'});
+  }
+  if (playerTeams.includes(awayIdx)){
+    humanTeams.push({teamIdx: awayIdx, slot: playerTeams.indexOf(awayIdx), side: 'away'});
+  }
+
+  if (humanTeams.length === 0){
+    startLiveMatch(homeIdx, awayIdx, isKnockout, null, null);
+    return;
+  }
+
+  lineupQueue = humanTeams.slice();
+  lineupResults = {};
+  currentMatchContext = { homeIdx, awayIdx, isKnockout };
+  nextLineup();
+}
+
+/* =========================================================
+   9. 世界杯抽签
+   ========================================================= */
+function pickQualified(){
+  const top = [];
+  for (let i=0; i<24; i++) top.push(i);
+  const rest = [];
+  for (let i=24; i<68; i++) rest.push(i);
+  const picked = shuffle(rest).slice(0, 24);
+  let result = [...top, ...picked];
+
+  for (const pt of playerTeams){
+    if (!result.includes(pt)){
+      const replaceable = result.filter(t => t >= 24 && !playerTeams.includes(t));
+      if (replaceable.length > 0){
+        const victim = replaceable[Math.floor(Math.random()*replaceable.length)];
+        result = result.filter(t => t !== victim);
+        result.push(pt);
+      }
+    }
+  }
+  return shuffle(result);
+}
+
+function drawGroups(){
+  const s = shuffle(qualified);
+  groups = [];
+  for (let i=0; i<12; i++) groups.push(s.slice(i*4, i*4+4));
+}
+
+function initStandings(){
+  standings = groups.map(g => g.map(t => ({
+    team: t, played:0, w:0, d:0, l:0, gf:0, ga:0, gd:0, pts:0
+  })));
+}
+
+function generateGroupMatches(){
+  groupMatches = [];
+  const SCHEDULE = [
+    [[0,1],[2,3]],
+    [[0,2],[1,3]],
+    [[0,3],[1,2]]
+  ];
+  for (let g=0; g<12; g++){
+    const t = groups[g];
+    for (let r=0; r<3; r++){
+      for (const [i,j] of SCHEDULE[r]){
+        groupMatches.push({
+          stage:'group', round:r, group:g,
+          home:t[i], away:t[j],
+          hg:null, ag:null, played:false
+        });
+      }
+    }
+  }
+}
+
+function applyGroupResult(m){
+  const gs = standings[m.group];
+  const h = gs.find(r => r.team === m.home);
+  const a = gs.find(r => r.team === m.away);
+  h.played++; a.played++;
+  h.gf += m.hg; h.ga += m.ag;
+  a.gf += m.ag; a.ga += m.hg;
+  if (m.hg > m.ag){ h.w++; a.l++; h.pts += 3; }
+  else if (m.hg < m.ag){ a.w++; h.l++; a.pts += 3; }
+  else { h.d++; a.d++; h.pts++; a.pts++; }
+  h.gd = h.gf - h.ga;
+  a.gd = a.gf - a.ga;
+}
+
+function rankGroup(g){
+  return [...standings[g]].sort((a,b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.gd  !== a.gd ) return b.gd  - a.gd;
+    if (b.gf  !== a.gf ) return b.gf  - a.gf;
+    return a.team - b.team;
+  });
+}
+
+/* =========================================================
+   10. 比赛数学模拟
+   ========================================================= */
+function simulateMatch(homeIdx, awayIdx){
+  const rH = TEAM_RATINGS[homeIdx];
+  const rA = TEAM_RATINGS[awayIdx];
+  const diff = (rH - rA) / 14;
+  const expH = 1.35 * Math.exp(diff * 0.38);
+  const expA = 1.35 * Math.exp(-diff * 0.38);
+  return {
+    hg: poisson(Math.max(0.18, expH)),
+    ag: poisson(Math.max(0.18, expA))
+  };
+}
+
+function simulateKnockout(homeIdx, awayIdx){
+  let { hg, ag } = simulateMatch(homeIdx, awayIdx);
+  let etHg = 0, etAg = 0, wentET = false, penH = null, penA = null;
+
+  if (hg === ag){
+    wentET = true;
+    const diff = (TEAM_RATINGS[homeIdx] - TEAM_RATINGS[awayIdx]) / 14;
+    etHg = poisson(Math.max(0.05, 0.55 * Math.exp(diff * 0.38)));
+    etAg = poisson(Math.max(0.05, 0.55 * Math.exp(-diff * 0.38)));
+    const totalH = hg + etHg, totalA = ag + etAg;
+
+    if (totalH === totalA){
+      let h = 0, a = 0;
+      for (let i=0; i<5; i++){
+        if (Math.random() < 0.76) h++;
+        if (Math.random() < 0.76) a++;
+        const rem = 4 - i;
+        if (h > a + rem) break;
+        if (a > h + rem) break;
+      }
+      while (h === a){
+        if (Math.random() < 0.76) h++;
+        if (Math.random() < 0.76) a++;
+      }
+      penH = h; penA = a;
+    }
+  }
+
+  const finalH = hg + etHg, finalA = ag + etAg;
+  let winner;
+  if (penH !== null) winner = penH > penA ? homeIdx : awayIdx;
+  else               winner = finalH > finalA ? homeIdx : awayIdx;
+
+  return { hg, ag, etHg, etAg, penH, penA, wentET, finalH, finalA, winner };
+}
+
+/* =========================================================
+   11. 淘汰赛构建（2026 规则）
+   ========================================================= */
+function buildR32(){
+  const firsts  = [];
+  const seconds = [];
+  const thirds  = [];
+
+  for (let g=0; g<12; g++){
+    const sorted = rankGroup(g);
+    firsts.push ({ team: sorted[0].team, group: g });
+    seconds.push({ team: sorted[1].team, group: g });
+    thirds.push ({ team: sorted[2].team, group: g, row: sorted[2] });
+  }
+
+  thirds.sort((a,b) => {
+    if (b.row.pts !== a.row.pts) return b.row.pts - a.row.pts;
+    if (b.row.gd  !== a.row.gd ) return b.row.gd  - a.row.gd;
+    return b.row.gf - a.row.gf;
+  });
+  const bestThirds = thirds.slice(0, 8);
+
+  const matches = [];
+
+  const fvsT = [
+    { f: 0,  t: 0 }, { f: 2,  t: 1 }, { f: 4,  t: 2 }, { f: 6,  t: 3 },
+    { f: 8,  t: 4 }, { f: 10, t: 5 }, { f: 1,  t: 6 }, { f: 3,  t: 7 },
+  ];
+  for (const p of fvsT){
+    matches.push({
+      stage:'R32', idx: matches.length,
+      home: firsts[p.f].team, away: bestThirds[p.t].team,
+      homeGroup: p.f, awayGroup: bestThirds[p.t].group,
+      hg:null, ag:null, played:false,
+      winner:null, wentET:false, penH:null, penA:null
+    });
+  }
+
+  const fvsS = [
+    { f: 5,  s: 6 }, { f: 7,  s: 8 }, { f: 9,  s: 10 }, { f: 11, s: 4 },
+  ];
+  for (const p of fvsS){
+    matches.push({
+      stage:'R32', idx: matches.length,
+      home: firsts[p.f].team, away: seconds[p.s].team,
+      homeGroup: p.f, awayGroup: p.s,
+      hg:null, ag:null, played:false,
+      winner:null, wentET:false, penH:null, penA:null
+    });
+  }
+
+  const svsS = [
+    { a: 0, b: 1 }, { a: 2, b: 3 }, { a: 5, b: 7 }, { a: 9, b: 11 },
+  ];
+  for (const p of svsS){
+    matches.push({
+      stage:'R32', idx: matches.length,
+      home: seconds[p.a].team, away: seconds[p.b].team,
+      homeGroup: p.a, awayGroup: p.b,
+      hg:null, ag:null, played:false,
+      winner:null, wentET:false, penH:null, penA:null
+    });
+  }
+
+  koRounds = [{ stage:'R32', name:'32强', matches }];
+  koStageIdx = 0;
+}
+
+function buildNextRound(prevMatches, stageName, stageLabel){
+  const winners = prevMatches.map(m => m.winner);
+  const matches = [];
+  for (let i=0; i<winners.length; i+=2){
+    matches.push({
+      stage: stageName, idx: matches.length,
+      home: winners[i], away: winners[i+1],
+      hg:null, ag:null, played:false,
+      winner:null, wentET:false, penH:null, penA:null
+    });
+  }
+  koRounds.push({ stage: stageName, name: stageLabel, matches });
+  koStageIdx = koRounds.length - 1;
+}
+
+/* =========================================================
+   12. 实时比赛引擎
+   ========================================================= */
+const M = 9;
+const FW = 105*M, FH = 68*M, PAD = 34;
+const GOAL_W = 7.32*M, GOAL_D = 2*M;
+const PEN_D = 16.5*M, PEN_W = 40.32*M;
+const GA_D = 5.5*M, GA_W = 18.32*M;
+const CENTER_R = 9.15*M, PEN_SPOT = 11*M;
+const PLAYER_R = 11, BALL_R = 6;
+const TOUCH_R = PLAYER_R + BALL_R + 2;
+
+const canvas = document.getElementById('matchCanvas');
+canvas.width = FW + PAD*2;
+canvas.height = FH + PAD*2 + 4;
+const ctx = canvas.getContext('2d');
+
+const CONTROLS = [
+  { up:'KeyW', down:'KeyS', left:'KeyA', right:'KeyD', pass:'KeyJ', shoot:'Space' },
+  { up:'ArrowUp', down:'ArrowDown', left:'ArrowLeft', right:'ArrowRight', pass:'Period', shoot:'Slash' }
+];
+
+const keys = {};
+const pressedThisFrame = {};
+const BLOCK = new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Slash','Period','KeyJ']);
+
+let pk = null; // 点球大战状态
+
+window.addEventListener('keydown', e => {
+  if (pk && pk.active && pk.phase !== 'result' && pk.phase !== 'done'){
+    if (e.repeat) return;
+    handlePenaltyKey(e);
+    return;
+  }
+  if (e.repeat) return;
+  if (!keys[e.code]) pressedThisFrame[e.code] = true;
+  keys[e.code] = true;
+  if (BLOCK.has(e.code)) e.preventDefault();
+}, {passive:false});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+let live = null;
+
+function ratingNorm(rating){
+  return clamp((rating - 60) / 32, 0, 1);
+}
+
+function createLiveMatch(homeIdx, awayIdx, isKnockout, homeLineup, awayLineup){
+  if (!homeLineup) homeLineup = pickAILineup(homeIdx);
+  if (!awayLineup) awayLineup = pickAILineup(awayIdx);
+
+  const playerSlot = [-1, -1];
+  const realTeamIdx = [homeIdx, awayIdx];
+  for (let t=0; t<2; t++){
+    const pIdx = playerTeams.indexOf(realTeamIdx[t]);
+    if (pIdx >= 0) playerSlot[t] = pIdx;
+  }
+
+  const ps = [];
+  for (let t=0; t<2; t++){
+    const teamIdx = realTeamIdx[t];
+    const lineup = t===0 ? homeLineup : awayLineup;
+    const rating = TEAM_RATINGS[teamIdx];
+    const norm = ratingNorm(rating);
+    const speedFactor = 0.75 + norm * 0.60;
+    const skill = 0.60 + norm * 0.80;
+
+    for (const entry of lineup){
+      const base = entry.role==='GK' ? 52 : (entry.role==='DF' ? 65 : 70);
+      ps.push({
+        team:t, role: entry.role, num: entry.num,
+        fx: entry.fx, fy: entry.fy,
+        x:0, y:0, vx:0, vy:0, tx:0, ty:0,
+        maxSpeed: base * speedFactor + rand(-2, 3),
+        skill: skill,
+        sentOff:false, yellow:0,
+        decisionTimer:0, tackleTimer:0, kickCd:0
+      });
+    }
+  }
+
+  const match = {
+    homeIdx, awayIdx, isKnockout,
+    playerSlot,
+    players: ps,
+    ball: { x: FW/2, y: FH/2, vx:0, vy:0 },
+    state: 'kickoff', stateTimer: 1.0,
+    spTeam: 0, spTaker: null, spTimer: 1.0,
+    score: [0, 0],
+    matchTime: 0, half: 1, totalHalf: 2,
+    paused: false,
+    speedMul: 1,
+    messages: [],
+    controlled: [null, null],
+    ballCarrier: null,
+    lastTouch: null, lastTouchTeam: 0,
+    offside: null,
+    lastGoalTeam: 0,
+    finished: false,
+    stats: {
+      possessionTime: [0, 0],
+      shots: [0, 0],
+      shotsOnTarget: [0, 0],
+      passes: [0, 0],
+      corners: [0, 0],
+      fouls: [0, 0],
+      yellowCards: [0, 0],
+      redCards: [0, 0],
+    }
+  };
+
+  resetLivePositions(match, 0);
+  return match;
+}
+
+function isHumanTeam(lm, t){ return lm.playerSlot[t] >= 0; }
+function getControlForTeam(lm, t){
+  const slot = lm.playerSlot[t];
+  return slot >= 0 ? CONTROLS[slot] : null;
+}
+
+function resetLivePositions(lm, kickTeam){
+  for (const p of lm.players){
+    if (p.sentOff) continue;
+    const dir = p.team===0 ? 1 : -1;
+    let x = dir>0 ? p.fx*FW : (1-p.fx)*FW;
+    let y = p.fy*FH;
+    if (dir>0) x = Math.min(x, FW/2 - 16);
+    else       x = Math.max(x, FW/2 + 16);
+    p.x = x; p.y = y; p.vx = 0; p.vy = 0; p.tx = x; p.ty = y;
+    p.decisionTimer = 0; p.kickCd = 0; p.tackleTimer = 0;
+  }
+  lm.ball.x = FW/2; lm.ball.y = FH/2;
+  lm.ball.vx = 0; lm.ball.vy = 0;
+  lm.ballCarrier = null;
+  lm.offside = null;
+
+  const dir = kickTeam===0 ? 1 : -1;
+  const list = lm.players.filter(p => p.team===kickTeam && !p.sentOff && p.role!=='GK');
+  if (list.length >= 2){
+    list[0].x = FW/2 - dir*22; list[0].y = FH/2 + 14;
+    list[1].x = FW/2 - dir*48; list[1].y = FH/2 - 16;
+    lm.spTaker = list[0];
+  } else {
+    lm.spTaker = null;
+  }
+  lm.spTeam = kickTeam;
+  lm.state = 'kickoff';
+  lm.spTimer = 1.0;
+}
+
+function liveAddMsg(lm, text){
+  lm.messages.push({ text, t: 2.6 });
+  if (lm.messages.length > 4) lm.messages.shift();
+}
+
+/* ---------- 定位球 ---------- */
+function liveBeginSetPiece(lm, type, team, x, y){
+  lm.state = type;
+  lm.spTeam = team;
+  lm.spTimer = 1.0;
+  lm.ballCarrier = null;
+  lm.offside = null;
+
+  lm.ball.x = clamp(x, 4, FW-4);
+  lm.ball.y = clamp(y, 4, FH-4);
+  lm.ball.vx = 0; lm.ball.vy = 0;
+
+  if (type === 'corner') lm.stats.corners[team]++;
+
+  let best = null, bd = Infinity;
+  for (const p of lm.players){
+    if (p.team!==team || p.sentOff || p.role==='GK') continue;
+    const d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+    if (d < bd){ bd = d; best = p; }
+  }
+  lm.spTaker = best;
+}
+
+function liveExecuteSetPiece(lm){
+  const t = lm.spTaker;
+  if (!t || t.sentOff){ lm.state = 'play'; return; }
+
+  const dir = t.team===0 ? 1 : -1;
+  const goalX = dir>0 ? FW : 0;
+
+  if (lm.state === 'throwin'){
+    const mate = liveNearestMate(lm, t);
+    const ang = mate ? Math.atan2(mate.y-t.y, mate.x-t.x) : (dir>0?0:Math.PI);
+    liveKick(lm, t, Math.cos(ang)*175, Math.sin(ang)*175, false);
+  } else if (lm.state === 'goalkick'){
+    const ang = dir>0 ? rand(-0.34,0.34) : Math.PI + rand(-0.34,0.34);
+    liveKick(lm, t, Math.cos(ang)*330, Math.sin(ang)*330, false);
+  } else if (lm.state === 'corner'){
+    const tx = dir>0 ? PEN_SPOT : FW - PEN_SPOT;
+    const ty = FH/2 + rand(-60,60);
+    const d  = dist(t.x, t.y, tx, ty);
+    const sp = clamp(d*1.28, 175, 320);
+    const ang = Math.atan2(ty-t.y, tx-t.x);
+    liveKick(lm, t, Math.cos(ang)*sp, Math.sin(ang)*sp, false);
+  } else if (lm.state === 'freekick'){
+    const dGoal = dist(t.x, t.y, goalX, FH/2);
+    if (dGoal < 30*M && Math.abs(t.y - FH/2) < 26*M){
+      const ang = Math.atan2(FH/2-t.y, goalX-t.x) + rand(-0.07,0.07);
+      liveKick(lm, t, Math.cos(ang)*320, Math.sin(ang)*320, false, 'shot');
+    } else {
+      const mate = liveFindPass(lm, t, dir) || liveNearestMate(lm, t);
+      if (mate){
+        const ang = Math.atan2(mate.y-t.y, mate.x-t.x) + rand(-0.04,0.04);
+        liveKick(lm, t, Math.cos(ang)*245, Math.sin(ang)*245, false);
+      } else {
+        liveKick(lm, t, dir*235, rand(-30,30), false);
+      }
+    }
+  } else if (lm.state === 'penalty'){
+    const ang = Math.atan2(FH/2-t.y, goalX-t.x) + rand(-0.05,0.05);
+    liveKick(lm, t, Math.cos(ang)*345, Math.sin(ang)*345, false, 'shot');
+  } else if (lm.state === 'kickoff'){
+    const mate = liveNearestMate(lm, t);
+    const ang = mate ? Math.atan2(mate.y-t.y, mate.x-t.x) : (dir>0?0:Math.PI);
+    liveKick(lm, t, Math.cos(ang)*155, Math.sin(ang)*155, false);
+  }
+
+  lm.state = 'play';
+}
+
+function liveNearestMate(lm, p){
+  let best = null, bd = Infinity;
+  for (const q of lm.players){
+    if (q.team!==p.team || q===p || q.sentOff) continue;
+    const d = dist(p.x, p.y, q.x, q.y);
+    if (d < bd){ bd = d; best = q; }
+  }
+  return best;
+}
+
+function liveFindPass(lm, p, dir){
+  let best = null, bestScore = -Infinity;
+  for (const q of lm.players){
+    if (q.team!==p.team || q===p || q.sentOff || q.role==='GK') continue;
+    const d = dist(p.x, p.y, q.x, q.y);
+    if (d < 50 || d > 440) continue;
+    const progress = (q.x - p.x) * dir;
+    let threatScore = 0;
+    for (const opp of lm.players){
+      if (opp.team === p.team || opp.sentOff) continue;
+      const dq = dist(q.x, q.y, opp.x, opp.y);
+      if (dq < 45) threatScore -= 30;
+    }
+    const score = progress*1.9 - d*0.24 + threatScore + rand(-20,20);
+    if (score > bestScore){ bestScore = score; best = q; }
+  }
+  return best;
+}
+
+function isShotOnTarget(lm, ballX, ballY, vx, vy, shootingTeam){
+  const goalX = shootingTeam === 0 ? FW : 0;
+  const dx = goalX - ballX;
+  if (Math.abs(vx) < 1) return false;
+  if ((shootingTeam === 0 && vx <= 0) || (shootingTeam === 1 && vx >= 0)) return false;
+  const t = dx / vx;
+  if (t < 0 || t > 4) return false;
+  const yAt = ballY + vy * t;
+  return Math.abs(yAt - FH/2) < GOAL_W/2;
+}
+
+function liveKick(lm, p, vx, vy, allowOffside, kind){
+  if (kind === 'shot'){
+    lm.stats.shots[p.team]++;
+    if (isShotOnTarget(lm, p.x, p.y, vx, vy, p.team)){
+      lm.stats.shotsOnTarget[p.team]++;
+    }
+  } else if (kind === 'pass'){
+    lm.stats.passes[p.team]++;
+  }
+
+  lm.ballCarrier = null;
+  lm.ball.vx = vx;
+  lm.ball.vy = vy;
+  lm.lastTouch = p;
+  lm.lastTouchTeam = p.team;
+  p.kickCd = 0.36;
+
+  if (allowOffside && lm.state==='play') liveRecordOffside(lm, p);
+  else lm.offside = null;
+}
+
+function liveRecordOffside(lm, kicker){
+  const dir = kicker.team===0 ? 1 : -1;
+  const opp = 1 - kicker.team;
+  const defs = lm.players.filter(q => q.team===opp && !q.sentOff);
+  if (defs.length < 2){ lm.offside = null; return; }
+
+  const xs = defs.map(q => q.x);
+  xs.sort((a,b) => dir>0 ? b-a : a-b);
+  const secondLast = xs[1];
+  const line = dir>0 ? Math.max(lm.ball.x, secondLast) : Math.min(lm.ball.x, secondLast);
+
+  const offenders = new Set();
+  for (const q of lm.players){
+    if (q.team!==kicker.team || q===kicker || q.sentOff) continue;
+    if (dir>0){ if (q.x > FW/2 && q.x > line) offenders.add(q); }
+    else      { if (q.x < FW/2 && q.x < line) offenders.add(q); }
+  }
+  lm.offside = { active:true, team:kicker.team, offenders };
+}
+
+function liveCheckOffsideTouch(lm, p){
+  if (!lm.offside || !lm.offside.active) return false;
+  if (p.team !== lm.offside.team){ lm.offside.active = false; return false; }
+  if (lm.offside.offenders.has(p)){
+    lm.offside.active = false;
+    const oppTeam = 1 - p.team;
+    const oppIdx = oppTeam===0 ? lm.homeIdx : lm.awayIdx;
+    liveAddMsg(lm, `🚩 越位！${TEAM_NAMES[oppIdx]} 获得任意球`);
+    liveBeginSetPiece(lm, 'freekick', oppTeam, p.x, p.y);
+    return true;
+  }
+  return false;
+}
+
+function liveCommitFoul(lm, fouler, victim){
+  const foulTeam = fouler.team;
+  lm.stats.fouls[foulTeam]++;
+
+  const inBoxX = foulTeam===0 ? (victim.x < PEN_D) : (victim.x > FW - PEN_D);
+  const inBoxY = Math.abs(victim.y - FH/2) < PEN_W/2;
+
+  const r = Math.random();
+  if (r < 0.24){
+    fouler.yellow++;
+    lm.stats.yellowCards[foulTeam]++;
+    const foulerIdx = fouler.team===0 ? lm.homeIdx : lm.awayIdx;
+    if (fouler.yellow >= 2){
+      fouler.sentOff = true;
+      lm.stats.redCards[foulTeam]++;
+      liveAddMsg(lm, `🟥 红牌！${TEAM_NAMES[foulerIdx]} ${fouler.num}号`);
+    } else {
+      liveAddMsg(lm, `🟨 黄牌：${TEAM_NAMES[foulerIdx]} ${fouler.num}号`);
+    }
+  }
+
+  if (inBoxX && inBoxY){
+    const vIdx = victim.team===0 ? lm.homeIdx : lm.awayIdx;
+    liveAddMsg(lm, `⚖️ 点球！${TEAM_NAMES[vIdx]}`);
+    const px = foulTeam===0 ? PEN_SPOT : FW - PEN_SPOT;
+    liveBeginSetPiece(lm, 'penalty', victim.team, px, FH/2);
+  } else {
+    const vIdx = victim.team===0 ? lm.homeIdx : lm.awayIdx;
+    liveAddMsg(lm, `⚖️ 犯规，${TEAM_NAMES[vIdx]} 任意球`);
+    liveBeginSetPiece(lm, 'freekick', victim.team, victim.x, victim.y);
+  }
+}
+
+function liveUpdateControls(lm){
+  for (let t=0; t<2; t++){
+    if (!isHumanTeam(lm, t)){ lm.controlled[t] = null; continue; }
+    lm.controlled[t] = livePickControlled(lm, t);
+  }
+}
+
+function livePickControlled(lm, team){
+  if (lm.ballCarrier && lm.ballCarrier.team===team &&
+      !lm.ballCarrier.sentOff && lm.ballCarrier.role!=='GK'){
+    return lm.ballCarrier;
+  }
+  const prev = lm.controlled[team];
+  let best = null, bd = Infinity;
+  for (const p of lm.players){
+    if (p.team!==team || p.sentOff || p.role==='GK') continue;
+    let d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+    if (p === prev) d -= 34;
+    if (d < bd){ bd = d; best = p; }
+  }
+  return best;
+}
+
+function liveMoveHuman(lm, p, dt){
+  const ctrl = getControlForTeam(lm, p.team);
+  if (!ctrl) return;
+
+  let dx = 0, dy = 0;
+  if (keys[ctrl.up])    dy -= 1;
+  if (keys[ctrl.down])  dy += 1;
+  if (keys[ctrl.left])  dx -= 1;
+  if (keys[ctrl.right]) dx += 1;
+
+  const speed = p.maxSpeed * DIFF.HUMAN_SPEED_MUL;
+  if (dx || dy){
+    const len = Math.hypot(dx,dy);
+    dx /= len; dy /= len;
+    const k = Math.min(1, dt*15);
+    p.vx += (dx*speed - p.vx) * k;
+    p.vy += (dy*speed - p.vy) * k;
+  } else {
+    const damp = Math.pow(0.004, dt);
+    p.vx *= damp; p.vy *= damp;
+  }
+  p.x += p.vx*dt;
+  p.y += p.vy*dt;
+  p.x = clamp(p.x, -4, FW+4);
+  p.y = clamp(p.y, -4, FH+4);
+}
+
+function liveHandleHumanKick(lm){
+  if (lm.state !== 'play') return;
+  for (let t=0; t<2; t++){
+    if (!isHumanTeam(lm, t)) continue;
+    const p = lm.controlled[t];
+    if (!p || p.sentOff || p.kickCd > 0) continue;
+    const ctrl = getControlForTeam(lm, t);
+    if (!ctrl) continue;
+    const shoot = !!pressedThisFrame[ctrl.shoot];
+    const pass  = !!pressedThisFrame[ctrl.pass];
+    if (!shoot && !pass) continue;
+    const d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+    if (d > TOUCH_R + 15) continue;
+    liveDoHumanKick(lm, p, shoot);
+  }
+}
+
+function liveDoHumanKick(lm, p, isShoot){
+  const dir = p.team===0 ? 1 : -1;
+  const goalX = dir>0 ? FW : 0;
+  const goalY = FH/2;
+
+  if (isShoot){
+    const dGoal = dist(p.x, p.y, goalX, goalY);
+    const aimY = goalY + rand(-GOAL_W*0.30, GOAL_W*0.30);
+    const ang = Math.atan2(aimY - p.y, goalX - p.x);
+    const power = clamp(dGoal*0.85 + 200, 300, 480);
+    liveKick(lm, p, Math.cos(ang)*power, Math.sin(ang)*power, true, 'shot');
+  } else {
+    const mate = liveFindPass(lm, p, dir);
+    if (mate){
+      const d = dist(p.x, p.y, mate.x, mate.y);
+      const sp = clamp(d*1.4, 180, 345);
+      const ang = Math.atan2(mate.y - p.y, mate.x - p.x);
+      liveKick(lm, p, Math.cos(ang)*sp, Math.sin(ang)*sp, true, 'pass');
+    } else {
+      const ang = dir>0 ? 0 : Math.PI;
+      liveKick(lm, p, Math.cos(ang)*265, Math.sin(ang)*265, true, 'pass');
+    }
+  }
+}
+
+/* ---------- AI ---------- */
+function liveGKAI(lm, p){
+  const dir = p.team===0 ? 1 : -1;
+  let tx = dir>0 ? 3*M : FW - 3*M;
+  let ty = FH/2 + (lm.ball.y - FH/2) * 0.32;
+
+  const ballInBox = dir>0 ? lm.ball.x < PEN_D : lm.ball.x > FW - PEN_D;
+  const ballNear = Math.abs(lm.ball.y - FH/2) < PEN_W/2 + 40;
+  const dBall = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+
+  if (ballInBox && ballNear && dBall < DIFF.AI_GK_RUSH_RANGE_M*M &&
+      (!lm.ballCarrier || lm.ballCarrier.team!==p.team)){
+    tx = lm.ball.x; ty = lm.ball.y;
+  }
+
+  if (lm.ballCarrier === p){
+    if (p.decisionTimer <= 0){
+      p.decisionTimer = 1.0;
+      let best = null, bs = -Infinity;
+      for (const q of lm.players){
+        if (q.team !== p.team || q.sentOff || q.role === 'GK') continue;
+        const prog = (q.x - p.x) * dir;
+        if (prog > bs){ bs = prog; best = q; }
+      }
+      if (best){
+        const ang = Math.atan2(best.y - p.y, best.x - p.x) + rand(-0.08,0.08);
+        liveKick(lm, p, Math.cos(ang)*340, Math.sin(ang)*340, false, 'pass');
+      } else {
+        const ang = dir>0 ? rand(-0.4,0.4) : Math.PI + rand(-0.4,0.4);
+        liveKick(lm, p, Math.cos(ang)*320, Math.sin(ang)*320, false, 'pass');
+      }
+    }
+    return;
+  }
+
+  ty = clamp(ty, FH/2 - GOAL_W/2 - 20, FH/2 + GOAL_W/2 + 20);
+  p.tx = clamp(tx, 6, FW-6);
+  p.ty = clamp(ty, 6, FH-6);
+}
+
+function liveCarrierDecide(lm, p, dt){
+  p.decisionTimer -= dt;
+  if (p.decisionTimer > 0) return;
+  p.decisionTimer = rand(DIFF.AI_DECISION_MIN, DIFF.AI_DECISION_MAX) / p.skill;
+
+  const dir = p.team===0 ? 1 : -1;
+  const goalX = dir>0 ? FW : 0;
+  const goalY = FH/2;
+  const dGoal = dist(p.x, p.y, goalX, goalY);
+
+  if (dGoal < DIFF.AI_SHOOT_RANGE_M*M){
+    const spread = DIFF.AI_SHOOT_SPREAD / p.skill;
+    const ang = Math.atan2(goalY - p.y + rand(-spread, spread), goalX - p.x);
+    const sp = rand(285, 350) * p.skill;
+    liveKick(lm, p, Math.cos(ang)*sp, Math.sin(ang)*sp, true, 'shot');
+    return;
+  }
+
+  if (Math.random() < DIFF.AI_PASS_CHANCE){
+    const mate = liveFindPass(lm, p, dir);
+    if (mate){
+      const d = dist(p.x, p.y, mate.x, mate.y);
+      const sp = clamp(d*1.6, 150, 320) * p.skill;
+      const spread = DIFF.AI_PASS_SPREAD / p.skill;
+      const ang = Math.atan2(mate.y - p.y, mate.x - p.x) + rand(-spread, spread);
+      liveKick(lm, p, Math.cos(ang)*sp, Math.sin(ang)*sp, true, 'pass');
+    }
+  }
+}
+
+function liveComputeAI(lm, dt){
+  for (let t=0; t<2; t++){
+    const dir = t===0 ? 1 : -1;
+    const mates = lm.players.filter(p => p.team===t && !p.sentOff);
+    const attacking = lm.ballCarrier ? (lm.ballCarrier.team===t) : (lm.lastTouchTeam===t);
+    const humanCtrl = isHumanTeam(lm, t) ? lm.controlled[t] : null;
+
+    let chaser1 = null, chaser2 = null;
+    let bd1 = Infinity, bd2 = Infinity;
+    for (const p of mates){
+      if (p.role==='GK') continue;
+      if (p === humanCtrl) continue;
+      const d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+      if (d < bd1){ bd2 = bd1; chaser2 = chaser1; bd1 = d; chaser1 = p; }
+      else if (d < bd2){ bd2 = d; chaser2 = p; }
+    }
+
+    for (const p of mates){
+      if (p.role==='GK'){ liveGKAI(lm, p); continue; }
+      if (p === humanCtrl) continue;
+
+      if (lm.state !== 'play' && p === lm.spTaker){
+        p.tx = lm.ball.x; p.ty = lm.ball.y;
+        continue;
+      }
+
+      if (p === lm.ballCarrier && lm.state === 'play'){
+        const goalX = dir>0 ? FW : 0;
+        const goalY = FH/2;
+        let avoidY = 0;
+        for (const opp of lm.players){
+          if (opp.team === t || opp.sentOff) continue;
+          if (dist(p.x, p.y, opp.x, opp.y) < 30) avoidY += (p.y - opp.y);
+        }
+        const ang = Math.atan2(goalY - p.y + avoidY*0.3, goalX - p.x);
+        p.tx = p.x + Math.cos(ang)*75;
+        p.ty = p.y + Math.sin(ang)*75;
+        continue;
+      }
+
+      const bx = dir>0 ? p.fx*FW : (1-p.fx)*FW;
+      const by = p.fy*FH;
+      const shiftX = (lm.ball.x - FW/2) * 0.36;
+      const shiftY = (lm.ball.y - FH/2) * 0.46;
+
+      let tx = bx + shiftX;
+      let ty = by + shiftY;
+      tx += dir * (attacking ? 68 : -34);
+
+      const isChaser1 = (p === chaser1);
+      const isChaser2 = DIFF.AI_DOUBLE_PRESS && (p === chaser2);
+
+      if (isChaser1){
+        if (lm.ballCarrier && lm.ballCarrier.team !== t){
+          tx = lm.ballCarrier.x; ty = lm.ballCarrier.y;
+        } else if (!lm.ballCarrier){
+          tx = lm.ball.x; ty = lm.ball.y;
+        } else {
+          tx = lm.ball.x - dir*70;
+          ty = lm.ball.y + (p.fy-0.5)*140;
+        }
+      } else if (isChaser2){
+        if (lm.ballCarrier && lm.ballCarrier.team !== t){
+          const ballX = lm.ballCarrier.x;
+          const ballY = lm.ballCarrier.y;
+          tx = (ballX + lm.ball.x)/2 + dir*18;
+          ty = (ballY + lm.ball.y)/2;
+        } else {
+          tx = lm.ball.x + (p.x - lm.ball.x)*0.35;
+          ty = lm.ball.y + (p.y - lm.ball.y)*0.35;
+        }
+      }
+
+      p.tx = clamp(tx, 10, FW-10);
+      p.ty = clamp(ty, 10, FH-10);
+    }
+  }
+
+  if (lm.ballCarrier && lm.state === 'play'){
+    const ctrl = isHumanTeam(lm, lm.ballCarrier.team) ? lm.controlled[lm.ballCarrier.team] : null;
+    if (lm.ballCarrier !== ctrl){
+      liveCarrierDecide(lm, lm.ballCarrier, dt);
+    }
+  }
+}
+
+function liveMovePlayers(lm, dt){
+  const chaser = [null, null];
+  const chaserD = [Infinity, Infinity];
+  for (const p of lm.players){
+    if (p.sentOff || p.role === 'GK') continue;
+    const d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+    if (d < chaserD[p.team]){ chaserD[p.team] = d; chaser[p.team] = p; }
+  }
+
+  for (const p of lm.players){
+    if (p.sentOff) continue;
+    p.kickCd = Math.max(0, p.kickCd - dt);
+
+    const isHumanCtrl = isHumanTeam(lm, p.team) && lm.controlled[p.team] === p;
+    if (isHumanCtrl){ liveMoveHuman(lm, p, dt); continue; }
+
+    let baseSp = p.maxSpeed * DIFF.AI_SPEED_MUL;
+    if (p === chaser[p.team]) baseSp *= DIFF.AI_SPRINT_MUL;
+    if (lm.ballCarrier === p) baseSp *= 1.08;
+
+    const dx = p.tx - p.x;
+    const dy = p.ty - p.y;
+    const d = Math.hypot(dx, dy);
+
+    if (d > 1.5){
+      let sp = baseSp;
+      if (d < 32) sp = baseSp * (d/32);
+      const ux = dx/d, uy = dy/d;
+      const k = Math.min(1, dt*12);
+      p.vx += (ux*sp - p.vx) * k;
+      p.vy += (uy*sp - p.vy) * k;
+    } else {
+      p.vx *= 0.72; p.vy *= 0.72;
+    }
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.x = clamp(p.x, -4, FW+4);
+    p.y = clamp(p.y, -4, FH+4);
+  }
+}
+
+function liveMoveBall(lm, dt){
+  if (lm.ballCarrier && !lm.ballCarrier.sentOff){
+    const sp = Math.hypot(lm.ballCarrier.vx, lm.ballCarrier.vy);
+    let ux, uy;
+    if (sp > 3){ ux = lm.ballCarrier.vx/sp; uy = lm.ballCarrier.vy/sp; }
+    else { ux = lm.ballCarrier.team===0 ? 1 : -1; uy = 0; }
+    const off = PLAYER_R + BALL_R + 2;
+    lm.ball.x = lm.ballCarrier.x + ux*off;
+    lm.ball.y = lm.ballCarrier.y + uy*off;
+    lm.ball.vx = lm.ballCarrier.vx;
+    lm.ball.vy = lm.ballCarrier.vy;
+    return;
+  }
+
+  lm.ball.x += lm.ball.vx * dt;
+  lm.ball.y += lm.ball.vy * dt;
+  const k = Math.pow(0.36, dt);
+  lm.ball.vx *= k;
+  lm.ball.vy *= k;
+
+  if (Math.hypot(lm.ball.vx, lm.ball.vy) < 2){
+    lm.ball.vx = 0; lm.ball.vy = 0;
+  }
+}
+
+function liveBallPlayerInteraction(lm, dt){
+  if (lm.ballCarrier && !lm.ballCarrier.sentOff){
+    if (lm.state === 'play') liveCheckTackles(lm, dt);
+    return;
+  }
+
+  let bestP = null, bestD = Infinity;
+  for (const p of lm.players){
+    if (p.sentOff || p.kickCd > 0) continue;
+    const d = dist(p.x, p.y, lm.ball.x, lm.ball.y);
+    if (d < TOUCH_R && d < bestD){ bestD = d; bestP = p; }
+  }
+  if (!bestP) return;
+
+  lm.lastTouch = bestP;
+  lm.lastTouchTeam = bestP.team;
+
+  if (liveCheckOffsideTouch(lm, bestP)) return;
+
+  const sp = Math.hypot(lm.ball.vx, lm.ball.vy);
+
+  if (sp > 13*M){
+    const d = bestD || 0.01;
+    const nx = (lm.ball.x - bestP.x)/d;
+    const ny = (lm.ball.y - bestP.y)/d;
+    lm.ball.x = bestP.x + nx*TOUCH_R;
+    lm.ball.y = bestP.y + ny*TOUCH_R;
+    const vn = lm.ball.vx*nx + lm.ball.vy*ny;
+    if (vn < 0){
+      lm.ball.vx -= 1.75*vn*nx;
+      lm.ball.vy -= 1.75*vn*ny;
+      lm.ball.vx *= 0.72;
+      lm.ball.vy *= 0.72;
+    }
+  } else {
+    lm.ballCarrier = bestP;
+    bestP.decisionTimer = 0.10;
+  }
+}
+
+function liveCheckTackles(lm, dt){
+  const c = lm.ballCarrier;
+  if (!c) return;
+
+  let best = null, bd = Infinity;
+  for (const p of lm.players){
+    if (p.team===c.team || p.sentOff || p.role==='GK') continue;
+    const d = dist(p.x, p.y, c.x, c.y);
+    if (d < bd){ bd = d; best = p; }
+  }
+
+  if (best && bd < PLAYER_R*2.4){
+    best.tackleTimer += dt;
+    if (best.tackleTimer > 0.36){
+      best.tackleTimer = 0;
+      const skillChance = DIFF.AI_TACKLE_BASE + (best.skill - 0.80) * DIFF.AI_TACKLE_SKILL;
+      if (Math.random() < Math.max(0.28, skillChance)){
+        lm.ballCarrier = best;
+        best.decisionTimer = 0.18;
+      } else {
+        liveCommitFoul(lm, best, c);
+      }
+    }
+  } else if (best){
+    best.tackleTimer = 0;
+  }
+}
+
+function liveCheckRules(lm){
+  const halfGoal = GOAL_W/2 - BALL_R*0.4;
+
+  if (lm.ball.x < 0 && Math.abs(lm.ball.y - FH/2) < halfGoal){ liveGoal(lm, 1); return; }
+  if (lm.ball.x > FW && Math.abs(lm.ball.y - FH/2) < halfGoal){ liveGoal(lm, 0); return; }
+
+  if (lm.ball.x < 0){
+    if (lm.lastTouchTeam === 0) liveBeginSetPiece(lm, 'corner', 1, 2, lm.ball.y < FH/2 ? 2 : FH-2);
+    else                        liveBeginSetPiece(lm, 'goalkick', 0, GA_D*0.6, FH/2 + rand(-40,40));
+    return;
+  }
+  if (lm.ball.x > FW){
+    if (lm.lastTouchTeam === 1) liveBeginSetPiece(lm, 'corner', 0, FW-2, lm.ball.y < FH/2 ? 2 : FH-2);
+    else                        liveBeginSetPiece(lm, 'goalkick', 1, FW - GA_D*0.6, FH/2 + rand(-40,40));
+    return;
+  }
+  if (lm.ball.y < 0){
+    liveBeginSetPiece(lm, 'throwin', 1-lm.lastTouchTeam, clamp(lm.ball.x,14,FW-14), 2);
+    return;
+  }
+  if (lm.ball.y > FH){
+    liveBeginSetPiece(lm, 'throwin', 1-lm.lastTouchTeam, clamp(lm.ball.x,14,FW-14), FH-2);
+    return;
+  }
+}
+
+function liveGoal(lm, team){
+  lm.score[team]++;
+  lm.lastGoalTeam = team;
+  lm.state = 'goal';
+  lm.stateTimer = 2.5;
+  lm.ballCarrier = null;
+  lm.ball.vx = 0; lm.ball.vy = 0;
+  lm.offside = null;
+  const idx = team===0 ? lm.homeIdx : lm.awayIdx;
+  liveAddMsg(lm, `⚽ 进球！${TEAM_NAMES[idx]}！ ${lm.score[0]}-${lm.score[1]}`);
+}
+
+function liveRunSetPiece(lm, dt){
+  lm.spTimer -= dt;
+  if (lm.spTaker && !lm.spTaker.sentOff){
+    const d = dist(lm.spTaker.x, lm.spTaker.y, lm.ball.x, lm.ball.y);
+    if ((lm.spTimer <= 0 && d < 34) || lm.spTimer <= -2.0) liveExecuteSetPiece(lm);
+  } else {
+    if (lm.spTimer <= 0) liveExecuteSetPiece(lm);
+  }
+}
+
+let lastFrame = performance.now();
+
+function liveUpdate(dt){
+  const lm = live;
+  if (!lm) return;
+
+  for (const m of lm.messages) m.t -= dt;
+  lm.messages = lm.messages.filter(m => m.t > 0);
+
+  if (lm.paused || lm.finished) return;
+  const dts = dt * lm.speedMul;
+
+  if (lm.state === 'halftime'){
+    lm.stateTimer -= dts;
+    if (lm.stateTimer <= 0){ lm.half = 2; resetLivePositions(lm, 1); }
+    return;
+  }
+  if (lm.state === 'etbreak'){
+    lm.stateTimer -= dts;
+    if (lm.stateTimer <= 0){ lm.half = 3; resetLivePositions(lm, 1); }
+    return;
+  }
+  if (lm.state === 'et2break'){
+    lm.stateTimer -= dts;
+    if (lm.stateTimer <= 0){ lm.half = 4; resetLivePositions(lm, 1); }
+    return;
+  }
+  if (lm.state === 'goal'){
+    lm.stateTimer -= dts;
+    if (lm.stateTimer <= 0) resetLivePositions(lm, 1 - lm.lastGoalTeam);
+    return;
+  }
+
+  if (lm.state !== 'halftime' && lm.state !== 'goal') lm.matchTime += dts * 30;
+
+  if (lm.ballCarrier && !lm.ballCarrier.sentOff){
+    lm.stats.possessionTime[lm.ballCarrier.team] += dts;
+  } else if (lm.lastTouchTeam === 0 || lm.lastTouchTeam === 1){
+    lm.stats.possessionTime[lm.lastTouchTeam] += dts;
+  }
+
+  const HALF1 = 45*60, HALF2 = 90*60, HALF3 = 105*60, HALF4 = 120*60;
+  if (lm.totalHalf === 2){
+    if (lm.half === 1 && lm.matchTime >= HALF1){
+      lm.half = 2; lm.state = 'halftime'; lm.stateTimer = 1.5;
+      liveAddMsg(lm, '⏸ 半场结束'); return;
+    }
+    if (lm.half === 2 && lm.matchTime >= HALF2){
+      if (lm.score[0] !== lm.score[1] || !lm.isKnockout){ finishLiveMatch(lm); return; }
+      lm.totalHalf = 4; lm.half = 3; lm.state = 'etbreak'; lm.stateTimer = 1.5;
+      liveAddMsg(lm, '⏱ 进入加时赛（非金球）'); return;
+    }
+  }
+  if (lm.totalHalf === 4){
+    if (lm.half === 3 && lm.matchTime >= HALF3){
+      lm.half = 4; lm.state = 'et2break'; lm.stateTimer = 1.5;
+      liveAddMsg(lm, '⏱ 加时赛下半场'); return;
+    }
+    if (lm.half === 4 && lm.matchTime >= HALF4){ finishLiveMatch(lm); return; }
+  }
+
+  liveUpdateControls(lm);
+  liveComputeAI(lm, dts);
+  liveMovePlayers(lm, dts);
+  liveMoveBall(lm, dts);
+  liveBallPlayerInteraction(lm, dts);
+  liveHandleHumanKick(lm);
+
+  if (lm.state === 'play') liveCheckRules(lm);
+  else if (lm.state !== 'goal') liveRunSetPiece(lm, dts);
+}
+
+/* =========================================================
+   13. 点球大战（玩家互动）
+   ========================================================= */
+function aiChooseZone(){
+  return {
+    col: Math.floor(Math.random() * 3),
+    row: Math.random() < 0.5 ? 0 : 1
+  };
+}
+
+function resolvePenalty(shooterZone, keeperZone){
+  const accuracy = shooterZone.row === 0 ? 0.72 : 0.88;
+  if (Math.random() > accuracy) return 'miss';
+
+  const sameZone = shooterZone.col === keeperZone.col && shooterZone.row === keeperZone.row;
+  const saveProb = sameZone ? 0.72 : 0.06;
+
+  if (Math.random() < saveProb) return 'save';
+  return 'goal';
+}
+
+function startPenaltyShootout(lm){
+  pk = {
+    active: true,
+    lm: lm,
+    homeIdx: lm.homeIdx,
+    awayIdx: lm.awayIdx,
+    homeScore: 0,
+    awayScore: 0,
+    homeTaken: 0,
+    awayTaken: 0,
+    firstShooter: Math.random() < 0.5 ? 0 : 1,
+    currentShooter: 0,
+    history: [],
+    phase: 'shoot-choice',
+    selectedCol: 1,
+    selectedRow: 0,
+    shooterChoice: null,
+    resultInfo: null,
+    finished: false,
+    winner: null,
+    timer: 0,
+  };
+
+  pk.currentShooter = pk.firstShooter;
+  $('penaltyOverlay').classList.add('active');
+  setupPenaltyKick();
+}
+
+function setupPenaltyKick(){
+  pk.selectedCol = 1;
+  pk.selectedRow = 0;
+  pk.shooterChoice = null;
+  pk.resultInfo = null;
+
+  const shooterTeamIdx = pk.currentShooter === 0 ? pk.homeIdx : pk.awayIdx;
+  const keeperTeamIdx = pk.currentShooter === 0 ? pk.awayIdx : pk.homeIdx;
+  const shooterIsHuman = playerTeams.includes(shooterTeamIdx);
+  const keeperIsHuman = playerTeams.includes(keeperTeamIdx);
+
+  if (shooterIsHuman){
+    pk.phase = 'shoot-choice';
+  } else if (keeperIsHuman){
+    pk.shooterChoice = aiChooseZone();
+    pk.phase = 'save-choice';
+  } else {
+    pk.shooterChoice = aiChooseZone();
+    pk.phase = 'shoot-choice';
+    setTimeout(() => {
+      if (pk && pk.active && pk.phase === 'shoot-choice'){
+        resolveAndApply(pk.shooterChoice, aiChooseZone());
+      }
+    }, 400);
+    return;
+  }
+
+  updatePenaltyUI();
+  drawPenaltyCanvas();
+}
+
+function handlePenaltyKey(e){
+  if (pk.phase === 'shoot-choice'){
+    const shooterTeamIdx = pk.currentShooter === 0 ? pk.homeIdx : pk.awayIdx;
+    if (!playerTeams.includes(shooterTeamIdx)) return;
+  } else if (pk.phase === 'save-choice'){
+    const keeperTeamIdx = pk.currentShooter === 0 ? pk.awayIdx : pk.homeIdx;
+    if (!playerTeams.includes(keeperTeamIdx)) return;
+  } else {
+    return;
+  }
+
+  let handled = false;
+  if (e.code === 'ArrowLeft'){
+    pk.selectedCol = (pk.selectedCol + 2) % 3;
+    handled = true;
+  } else if (e.code === 'ArrowRight'){
+    pk.selectedCol = (pk.selectedCol + 1) % 3;
+    handled = true;
+  } else if (e.code === 'ArrowUp'){
+    pk.selectedRow = 0;
+    handled = true;
+  } else if (e.code === 'ArrowDown'){
+    pk.selectedRow = 1;
+    handled = true;
+  } else if (e.code === 'Space'){
+    handlePenaltyConfirm();
+    handled = true;
+  }
+
+  if (handled){
+    e.preventDefault();
+    drawPenaltyCanvas();
+  }
+}
+
+function handlePenaltyConfirm(){
+  if (pk.phase === 'shoot-choice'){
+    pk.shooterChoice = { col: pk.selectedCol, row: pk.selectedRow };
+    const keeperTeamIdx = pk.currentShooter === 0 ? pk.awayIdx : pk.homeIdx;
+    const keeperIsHuman = playerTeams.includes(keeperTeamIdx);
+
+    if (keeperIsHuman){
+      pk.phase = 'save-choice';
+      pk.selectedCol = 1;
+      pk.selectedRow = 0;
+      updatePenaltyUI();
+      drawPenaltyCanvas();
+    } else {
+      const keeperZone = aiChooseZone();
+      resolveAndApply(pk.shooterChoice, keeperZone);
+    }
+  } else if (pk.phase === 'save-choice'){
+    const keeperZone = { col: pk.selectedCol, row: pk.selectedRow };
+    resolveAndApply(pk.shooterChoice, keeperZone);
+  }
+}
+
+function resolveAndApply(shooterZone, keeperZone){
+  const result = resolvePenalty(shooterZone, keeperZone);
+  pk.resultInfo = { type: result, shooterZone, keeperZone };
+
+  const shooter = pk.currentShooter;
+  if (result === 'goal'){
+    if (shooter === 0) pk.homeScore++;
+    else pk.awayScore++;
+  }
+  if (shooter === 0) pk.homeTaken++;
+  else pk.awayTaken++;
+
+  pk.history.push({ team: shooter, result });
+
+  pk.phase = 'result';
+  pk.timer = 1.8;
+  updatePenaltyUI();
+  drawPenaltyCanvas(true);
+}
+
+function advancePenalty(){
+  const winner = checkShootoutEnd();
+  if (winner !== -1){
+    finishShootout(winner);
+    return;
+  }
+
+  if (pk.homeTaken < pk.awayTaken){
+    pk.currentShooter = 0;
+  } else if (pk.awayTaken < pk.homeTaken){
+    pk.currentShooter = 1;
+  } else {
+    pk.currentShooter = pk.firstShooter;
+  }
+
+  setupPenaltyKick();
+}
+
+function checkShootoutEnd(){
+  const hs = pk.homeScore, as = pk.awayScore;
+  const ht = pk.homeTaken, at = pk.awayTaken;
+
+  if (ht < 5 || at < 5){
+    const homeRem = 5 - ht;
+    const awayRem = 5 - at;
+    if (hs > as + awayRem) return 0;
+    if (as > hs + homeRem) return 1;
+  }
+
+  if (ht === at && ht >= 5 && hs !== as){
+    return hs > as ? 0 : 1;
+  }
+
+  return -1;
+}
+
+function finishShootout(winner){
+  pk.finished = true;
+  pk.phase = 'done';
+  pk.winner = winner;
+
+  const lm = pk.lm;
+  lm.penH = pk.homeScore;
+  lm.penA = pk.awayScore;
+
+  updatePenaltyUI();
+  drawPenaltyCanvas(true, true);
+
+  setTimeout(() => {
+    $('penaltyOverlay').classList.remove('active');
+    pk.active = false;
+    showResultOverlay(lm, { h: pk.homeScore, a: pk.awayScore });
+  }, 2200);
+}
+
+function updatePenaltyUI(){
+  $('pkTeamA').textContent = TEAM_NAMES[pk.homeIdx];
+  $('pkTeamB').textContent = TEAM_NAMES[pk.awayIdx];
+  $('pkScore').textContent = `${pk.homeScore} - ${pk.awayScore}`;
+
+  let roundText = '';
+  if (pk.homeTaken < 5 || pk.awayTaken < 5){
+    const r = Math.min(5, Math.floor((pk.homeTaken + pk.awayTaken) / 2) + 1);
+    roundText = `第 ${r} 轮`;
+  } else {
+    roundText = '突然死亡';
+  }
+  $('pkRound').textContent = roundText;
+
+  let prompt = '';
+  if (pk.phase === 'shoot-choice'){
+    const sIdx = pk.currentShooter === 0 ? pk.homeIdx : pk.awayIdx;
+    if (playerTeams.includes(sIdx)){
+      prompt = `${TEAM_NAMES[sIdx]} 射门 · 选择方向，空格确认`;
+    } else {
+      prompt = `${TEAM_NAMES[sIdx]} 射门 · AI 选择中...`;
+    }
+  } else if (pk.phase === 'save-choice'){
+    const kIdx = pk.currentShooter === 0 ? pk.awayIdx : pk.homeIdx;
+    if (playerTeams.includes(kIdx)){
+      prompt = `${TEAM_NAMES[kIdx]} 守门 · 选择扑救方向，空格确认`;
+    } else {
+      prompt = `${TEAM_NAMES[kIdx]} 守门 · AI 选择中...`;
+    }
+  } else if (pk.phase === 'result'){
+    const info = pk.resultInfo;
+    if (info.type === 'goal') prompt = '⚽ 进球！';
+    else if (info.type === 'save') prompt = '🧤 扑出！';
+    else prompt = '❌ 射偏了！';
+  } else if (pk.phase === 'done'){
+    const wIdx = pk.winner === 0 ? pk.homeIdx : pk.awayIdx;
+    prompt = `🏆 ${TEAM_NAMES[wIdx]} 点球获胜！`;
+  }
+  $('pkInfo').textContent = prompt;
+
+  const homeHist = pk.history.filter(h => h.team === 0);
+  const awayHist = pk.history.filter(h => h.team === 1);
+  const maxShots = Math.max(homeHist.length, awayHist.length, 5);
+
+  const renderDots = (arr, len) => {
+    let s = '';
+    for (let i = 0; i < len; i++){
+      if (i < arr.length){
+        const h = arr[i];
+        const icon = h.result === 'goal' ? '✓' : '✗';
+        const cls = h.result === 'goal' ? 'pk-dot-goal' : 'pk-dot-miss';
+        s += `<span class="pk-dot ${cls}">${icon}</span>`;
+      } else {
+        s += `<span class="pk-dot pk-dot-empty">·</span>`;
+      }
+    }
+    return s;
+  };
+
+  $('pkHistory').innerHTML =
+    `<div class="pk-hist-row"><span class="pk-hist-team">${TEAM_NAMES[pk.homeIdx]}</span>${renderDots(homeHist, maxShots)}</div>` +
+    `<div class="pk-hist-row"><span class="pk-hist-team">${TEAM_NAMES[pk.awayIdx]}</span>${renderDots(awayHist, maxShots)}</div>`;
+}
+
+function drawPenaltyCanvas(reveal, showFinal){
+  const c = $('pkCanvas');
+  const cx = c.getContext('2d');
+  const W = 360, H = 220;
+  cx.clearRect(0, 0, W, H);
+
+  cx.fillStyle = '#1d5e2a';
+  cx.fillRect(0, 0, W, H);
+
+  const gx = 30, gy = 20, gw = 300, gh = 180;
+  const cw = gw / 3, ch = gh / 2;
+
+  for (let r = 0; r < 2; r++){
+    for (let c2 = 0; c2 < 3; c2++){
+      const x = gx + c2 * cw;
+      const y = gy + r * ch;
+      const isSelected = (pk.phase === 'shoot-choice' || pk.phase === 'save-choice')
+        && c2 === pk.selectedCol && r === pk.selectedRow;
+
+      if (isSelected){
+        cx.fillStyle = pk.phase === 'shoot-choice'
+          ? 'rgba(255, 240, 90, 0.45)'
+          : 'rgba(100, 200, 255, 0.45)';
+      } else {
+        cx.fillStyle = 'rgba(255,255,255,0.06)';
+      }
+      cx.fillRect(x, y, cw, ch);
+
+      cx.strokeStyle = 'rgba(255,255,255,0.25)';
+      cx.lineWidth = 1;
+      cx.strokeRect(x, y, cw, ch);
+    }
+  }
+
+  cx.strokeStyle = 'rgba(255,255,255,0.55)';
+  cx.lineWidth = 2;
+  cx.beginPath();
+  cx.moveTo(gx + cw, gy); cx.lineTo(gx + cw, gy + gh);
+  cx.moveTo(gx + cw*2, gy); cx.lineTo(gx + cw*2, gy + gh);
+  cx.moveTo(gx, gy + ch); cx.lineTo(gx + gw, gy + ch);
+  cx.stroke();
+
+  cx.strokeStyle = '#fff';
+  cx.lineWidth = 4;
+  cx.strokeRect(gx, gy, gw, gh);
+
+  if (reveal && pk.resultInfo){
+    const sz = pk.resultInfo.shooterZone;
+    const ballX = gx + (sz.col + 0.5) * cw;
+    const ballY = gy + (sz.row + 0.5) * ch;
+
+    const kz = pk.resultInfo.keeperZone;
+    const keeperX = gx + (kz.col + 0.5) * cw;
+    const keeperY = gy + (kz.row + 0.5) * ch + 18;
+
+    cx.beginPath();
+    cx.arc(keeperX, keeperY, 12, 0, Math.PI * 2);
+    cx.fillStyle = '#ffd54a';
+    cx.fill();
+    cx.strokeStyle = '#333';
+    cx.lineWidth = 2;
+    cx.stroke();
+
+    if (pk.resultInfo.type === 'goal'){
+      cx.beginPath();
+      cx.arc(ballX, ballY, 10, 0, Math.PI * 2);
+      cx.fillStyle = '#fff';
+      cx.fill();
+      cx.strokeStyle = '#333';
+      cx.lineWidth = 2;
+      cx.stroke();
+    } else if (pk.resultInfo.type === 'save'){
+      cx.beginPath();
+      cx.arc(keeperX + 16, keeperY - 6, 10, 0, Math.PI * 2);
+      cx.fillStyle = '#fff';
+      cx.fill();
+      cx.strokeStyle = '#333';
+      cx.lineWidth = 2;
+      cx.stroke();
+    } else {
+      cx.beginPath();
+      cx.arc(ballX + 45, ballY - 22, 10, 0, Math.PI * 2);
+      cx.fillStyle = '#fff';
+      cx.fill();
+      cx.strokeStyle = '#333';
+      cx.lineWidth = 2;
+      cx.stroke();
+    }
+  }
+
+  if (showFinal && pk.winner !== null){
+    cx.fillStyle = 'rgba(0,0,0,0.78)';
+    cx.fillRect(0, H/2 - 28, W, 56);
+    cx.fillStyle = '#ffd54a';
+    cx.font = 'bold 22px sans-serif';
+    cx.textAlign = 'center';
+    cx.textBaseline = 'middle';
+    const wIdx = pk.winner === 0 ? pk.homeIdx : pk.awayIdx;
+    cx.fillText(`${TEAM_NAMES[wIdx]} 获胜！`, W/2, H/2);
+  }
+}
+
+/* =========================================================
+   14. 比赛结束
+   ========================================================= */
+function finishLiveMatch(lm){
+  lm.finished = true;
+
+  if (lm.isKnockout && lm.score[0] === lm.score[1]){
+    startPenaltyShootout(lm);
+    return;
+  }
+
+  showResultOverlay(lm, null);
+}
+
+function showResultOverlay(lm, penInfo){
+  const overlay = $('resultOverlay');
+  overlay.classList.add('active');
+
+  const home = TEAM_NAMES[lm.homeIdx];
+  const away = TEAM_NAMES[lm.awayIdx];
+
+  $('resultTitle').textContent = lm.isKnockout ? '淘汰赛结束' : '小组赛结束';
+  $('resultTeamA').textContent = home;
+  $('resultTeamB').textContent = away;
+  $('resultScore').textContent = `${lm.score[0]} - ${lm.score[1]}`;
+
+  let penText = '';
+  if (penInfo){
+    const winner = penInfo.h > penInfo.a ? home : away;
+    penText = `点球大战 ${penInfo.h}-${penInfo.a} · ${winner}获胜`;
+  } else if (lm.score[0] > lm.score[1]){
+    penText = `${home} 获胜`;
+  } else if (lm.score[0] < lm.score[1]){
+    penText = `${away} 获胜`;
+  } else {
+    penText = '平局';
+  }
+  $('resultPenInfo').textContent = penText;
+
+  const totalTime = lm.stats.possessionTime[0] + lm.stats.possessionTime[1];
+  const pctA = totalTime > 0 ? Math.round(lm.stats.possessionTime[0] / totalTime * 100) : 50;
+  const pctB = 100 - pctA;
+
+  const rows = [
+    ['控球率', pctA + '%', pctB + '%'],
+    ['射门', lm.stats.shots[0], lm.stats.shots[1]],
+    ['射正', lm.stats.shotsOnTarget[0], lm.stats.shotsOnTarget[1]],
+    ['传球', lm.stats.passes[0], lm.stats.passes[1]],
+    ['角球', lm.stats.corners[0], lm.stats.corners[1]],
+    ['犯规', lm.stats.fouls[0], lm.stats.fouls[1]],
+    ['黄牌', lm.stats.yellowCards[0], lm.stats.yellowCards[1]],
+    ['红牌', lm.stats.redCards[0], lm.stats.redCards[1]],
+  ];
+
+  let html = `<thead><tr><th></th><th class="team-a">${home}</th><th class="team-b">${away}</th></tr></thead><tbody>`;
+  for (const [label, a, b] of rows){
+    html += `<tr><td class="label">${label}</td><td class="val a">${a}</td><td class="val b">${b}</td></tr>`;
+  }
+  html += '</tbody>';
+  $('statsTable').innerHTML = html;
+
+  const btn = $('resultContinue');
+  const handler = () => {
+    btn.removeEventListener('click', handler);
+    overlay.classList.remove('active');
+    recordLiveResult(lm);
+  };
+  btn.addEventListener('click', handler);
+}
+
+function recordLiveResult(lm){
+  const homeWon = lm.score[0] > lm.score[1] ||
+                 (lm.penH !== null && lm.penH > lm.penA);
+  const winner = homeWon ? lm.homeIdx : lm.awayIdx;
+
+  if (currentStage === 'group'){
+    const m = groupMatches.find(gm =>
+      gm.round === groupRound &&
+      ((gm.home === lm.homeIdx && gm.away === lm.awayIdx) ||
+       (gm.home === lm.awayIdx && gm.away === lm.homeIdx)));
+    if (m){
+      if (m.home === lm.homeIdx){ m.hg = lm.score[0]; m.ag = lm.score[1]; }
+      else                      { m.hg = lm.score[1]; m.ag = lm.score[0]; }
+      m.played = true;
+      applyGroupResult(m);
+    }
+  } else {
+    const round = koRounds[koStageIdx];
+    const m = round.matches.find(rm =>
+      (rm.home === lm.homeIdx && rm.away === lm.awayIdx) ||
+      (rm.home === lm.awayIdx && rm.away === lm.homeIdx));
+    if (m){
+      if (m.home === lm.homeIdx){
+        m.hg = lm.score[0]; m.ag = lm.score[1];
+        m.penH = lm.penH; m.penA = lm.penA;
+      } else {
+        m.hg = lm.score[1]; m.ag = lm.score[0];
+        m.penH = lm.penA; m.penA = lm.penH;
+      }
+      m.played = true;
+      m.winner = winner;
+      m.wentET = lm.totalHalf === 4;
+    }
+  }
+
+  setTimeout(() => {
+    live = null;
+    showScreen('tournamentScreen');
+    refreshTournamentUI();
+  }, 200);
+}
+
+/* =========================================================
+   15. 渲染实时比赛
+   ========================================================= */
+function drawLiveMatch(lm){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(PAD, PAD+4);
+
+  for (let i=0; i<10; i++){
+    ctx.fillStyle = i%2===0 ? '#2d8a3c' : '#33993f';
+    ctx.fillRect(0, i*FH/10, FW, FH/10);
+  }
+
+  ctx.strokeStyle = 'rgba(255,255,255,.85)';
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(0,0,FW,FH);
+  ctx.beginPath(); ctx.moveTo(FW/2,0); ctx.lineTo(FW/2,FH); ctx.stroke();
+  ctx.beginPath(); ctx.arc(FW/2, FH/2, CENTER_R, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(FW/2, FH/2, 3.5, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+
+  for (const side of [0,1]){
+    const isLeft = side===0;
+    ctx.strokeRect(isLeft ? 0 : FW-PEN_D, FH/2 - PEN_W/2, PEN_D, PEN_W);
+    ctx.strokeRect(isLeft ? 0 : FW-GA_D, FH/2 - GA_W/2, GA_D, GA_W);
+    const spotX = isLeft ? PEN_SPOT : FW-PEN_SPOT;
+    ctx.beginPath(); ctx.arc(spotX, FH/2, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    if (isLeft) ctx.arc(spotX, FH/2, CENTER_R, -Math.PI/2.6, Math.PI/2.6);
+    else        ctx.arc(spotX, FH/2, CENTER_R, Math.PI - Math.PI/2.6, Math.PI + Math.PI/2.6);
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(isLeft?0:FW, 0, 10, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(isLeft?0:FW, FH, 10, 0, Math.PI*2); ctx.stroke();
+  }
+
+  for (const side of [0,1]){
+    const isLeft = side===0;
+    const x = isLeft ? -GOAL_D : FW;
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    ctx.fillRect(x, FH/2 - GOAL_W/2, GOAL_D, GOAL_W);
+    ctx.strokeStyle = 'rgba(255,255,255,.95)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, FH/2 - GOAL_W/2, GOAL_D, GOAL_W);
+  }
+
+  const tNow = performance.now();
+  for (const p of lm.players){
+    if (p.sentOff) continue;
+    const isHome = p.team===0;
+    const isCtrl = isHumanTeam(lm, p.team) && lm.controlled[p.team] === p;
+
+    ctx.beginPath();
+    ctx.arc(p.x+1.5, p.y+2.5, PLAYER_R, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill();
+
+    if (isCtrl){
+      const pulse = 0.5 + 0.5*Math.sin(tNow/180);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, PLAYER_R + 6 + pulse*3, 0, Math.PI*2);
+      ctx.strokeStyle = `rgba(255,240,90,${0.55 + 0.35*pulse})`;
+      ctx.lineWidth = 2.6; ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, PLAYER_R, 0, Math.PI*2);
+    if (p.role==='GK') ctx.fillStyle = isHome ? '#ffd54a' : '#c78d1e';
+    else                ctx.fillStyle = isHome ? '#2b6cff' : '#e63946';
+    ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.stroke();
+
+    if (p === lm.ballCarrier){
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, PLAYER_R+4, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(255,255,255,.9)';
+      ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.num, p.x, p.y+0.5);
+
+    if (p.yellow > 0){
+      ctx.fillStyle = '#ffd400';
+      ctx.fillRect(p.x + PLAYER_R - 1, p.y - PLAYER_R - 5, 4, 6);
+    }
+  }
+
+  ctx.beginPath();
+  ctx.arc(lm.ball.x+1.5, lm.ball.y+2, BALL_R, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
+  ctx.beginPath();
+  ctx.arc(lm.ball.x, lm.ball.y, BALL_R, 0, Math.PI*2);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.lineWidth = 1.4; ctx.strokeStyle = '#333'; ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(lm.ball.x, lm.ball.y, BALL_R*0.42, 0, Math.PI*2);
+  ctx.fillStyle = '#2b2b2b'; ctx.fill();
+
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,12,18,.85)';
+  ctx.fillRect(0, 0, canvas.width, 34);
+
+  const mt = Math.floor(lm.matchTime);
+  const mm = String(Math.floor(mt/60)).padStart(2,'0');
+  const ss = String(mt%60).padStart(2,'0');
+
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textBaseline = 'middle';
+
+  ctx.fillStyle = '#7fb3ff';
+  ctx.textAlign = 'right';
+  ctx.fillText(TEAM_NAMES[lm.homeIdx], canvas.width/2 - 88, 17);
+
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.fillText(`${lm.score[0]}  :  ${lm.score[1]}`, canvas.width/2, 17);
+
+  ctx.fillStyle = '#ff8a8a';
+  ctx.textAlign = 'left';
+  ctx.fillText(TEAM_NAMES[lm.awayIdx], canvas.width/2 + 88, 17);
+
+  ctx.fillStyle = '#cfd6dd';
+  ctx.font = 'bold 14px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${mm}:${ss}`, 14, 17);
+
+  let stageLabel = '';
+  if (lm.totalHalf === 4) stageLabel = lm.half<=2 ? '加时赛' : (lm.half===3?'加时 上':'加时 下');
+  else stageLabel = lm.half===1 ? '上半场' : '下半场';
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 13px sans-serif';
+  ctx.fillStyle = '#ffd54a';
+  ctx.fillText(stageLabel, canvas.width-14, 17);
+
+  const labels = {
+    throwin:'界外球', goalkick:'球门球', corner:'角球',
+    freekick:'任意球', penalty:'点球', kickoff:'中圈开球'
+  };
+  if (labels[lm.state]){
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillStyle = '#ffd54a';
+    const spIdx = lm.spTeam===0 ? lm.homeIdx : lm.awayIdx;
+    ctx.fillText(labels[lm.state] + ' · ' + TEAM_NAMES[spIdx], canvas.width/2, 48);
+  }
+
+  ctx.font = 'bold 12px sans-serif';
+  for (let t=0; t<2; t++){
+    const slot = lm.playerSlot[t];
+    if (slot < 0) continue;
+    const idx = t===0 ? lm.homeIdx : lm.awayIdx;
+    ctx.fillStyle = slot===0 ? '#7fb3ff' : '#ff9d9d';
+    ctx.textAlign = t===0 ? 'left' : 'right';
+    ctx.fillText(`● 玩家${slot+1}操控 ${TEAM_NAMES[idx]}`, t===0 ? 14 : canvas.width-14, 48);
+  }
+
+  if (lm.messages.length){
+    const baseY = canvas.height - 26;
+    lm.messages.forEach((m, i) => {
+      const alpha = Math.min(1, m.t / 0.7);
+      ctx.globalAlpha = alpha;
+      ctx.font = 'bold 15px sans-serif';
+      ctx.textAlign = 'center';
+      const y = baseY - (lm.messages.length-1-i)*24;
+      const w = ctx.measureText(m.text).width + 28;
+      ctx.fillStyle = 'rgba(0,0,0,.62)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(canvas.width/2 - w/2, y-13, w, 26, 13);
+      else ctx.rect(canvas.width/2 - w/2, y-13, w, 26);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(m.text, canvas.width/2, y);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+}
+
+/* =========================================================
+   16. 主循环
+   ========================================================= */
+function loop(now){
+  requestAnimationFrame(loop);
+  let dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  dt = Math.min(dt, 0.04);
+  if (dt <= 0) return;
+
+  if (pk && pk.active && pk.phase === 'result'){
+    pk.timer -= dt;
+    if (pk.timer <= 0){
+      advancePenalty();
+    }
+  }
+
+  if (live){
+    liveUpdate(dt);
+    if (live) drawLiveMatch(live);
+  }
+  for (const k in pressedThisFrame) delete pressedThisFrame[k];
+}
+
+/* =========================================================
+   17. 屏幕切换与世界杯流程
+   ========================================================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function startTournament(){
+  qualified = pickQualified();
+  drawGroups();
+  initStandings();
+  generateGroupMatches();
+
+  currentStage = 'group';
+  groupRound = 0;
+  koRounds = [];
+  koStageIdx = 0;
+  tournamentOver = false;
+  champion = null;
+
+  showScreen('tournamentScreen');
+  refreshTournamentUI();
+}
+
+function getCurrentGroupMatches(){
+  return groupMatches.filter(m => m.round === groupRound);
+}
+
+function playCurrentRound(){
+  if (currentStage === 'group') playGroupRound();
+  else if (currentStage === 'ko') playKORound();
+}
+
+function findPlayerMatch(matches){
+  for (const m of matches){
+    if (playerTeams.includes(m.home) || playerTeams.includes(m.away)) return m;
+  }
+  return null;
+}
+
+function playGroupRound(){
+  const matches = getCurrentGroupMatches();
+  const playerMatch = findPlayerMatch(matches);
+
+  for (const m of matches){
+    if (m === playerMatch) continue;
+    const r = simulateMatch(m.home, m.away);
+    m.hg = r.hg; m.ag = r.ag; m.played = true;
+    applyGroupResult(m);
+  }
+
+  if (playerMatch) startLiveMatchWithLineups(playerMatch.home, playerMatch.away, false);
+  else refreshTournamentUI();
+}
+
+function playKORound(){
+  const round = koRounds[koStageIdx];
+  const matches = round.matches;
+  const playerMatch = findPlayerMatch(matches);
+
+  for (const m of matches){
+    if (m === playerMatch) continue;
+    const r = simulateKnockout(m.home, m.away);
+    m.hg = r.hg; m.ag = r.ag;
+    m.etHg = r.etHg; m.etAg = r.etAg;
+    m.penH = r.penH; m.penA = r.penA;
+    m.wentET = r.wentET;
+    m.winner = r.winner;
+    m.played = true;
+  }
+
+  if (playerMatch) startLiveMatchWithLineups(playerMatch.home, playerMatch.away, true);
+  else afterKOStage();
+}
+
+function afterKOStage(){
+  const round = koRounds[koStageIdx];
+
+  if (round.stage === 'ThirdPlace'){
+    koStageIdx++;
+    refreshTournamentUI();
+    return;
+  }
+
+  if (round.stage === 'Final'){
+    champion = round.matches[0].winner;
+    tournamentOver = true;
+    refreshTournamentUI();
+    return;
+  }
+
+  if (round.stage === 'SF'){
+    const losers = round.matches.map(m =>
+      m.winner === m.home ? m.away : m.home
+    );
+    const winners = round.matches.map(m => m.winner);
+
+    koRounds.push({
+      stage: 'ThirdPlace', name: '季军赛',
+      matches: [{
+        stage:'ThirdPlace', idx:0,
+        home: losers[0], away: losers[1],
+        hg:null, ag:null, played:false,
+        winner:null, wentET:false, penH:null, penA:null
+      }]
+    });
+    koRounds.push({
+      stage: 'Final', name: '决赛',
+      matches: [{
+        stage:'Final', idx:0,
+        home: winners[0], away: winners[1],
+        hg:null, ag:null, played:false,
+        winner:null, wentET:false, penH:null, penA:null
+      }]
+    });
+    koStageIdx = koRounds.length - 2;
+    refreshTournamentUI();
+    return;
+  }
+
+  const stageMap = {
+    'R32':  ['R16', '16强'],
+    'R16':  ['QF',  '8强'],
+    'QF':   ['SF',  '半决赛'],
+  };
+  if (stageMap[round.stage]){
+    const [nextStage, nextName] = stageMap[round.stage];
+    buildNextRound(round.matches, nextStage, nextName);
+  }
+  refreshTournamentUI();
+}
+
+function startLiveMatch(homeIdx, awayIdx, isKnockout, homeLineup, awayLineup){
+  live = createLiveMatch(homeIdx, awayIdx, isKnockout, homeLineup, awayLineup);
+  showScreen('matchScreen');
+  liveAddMsg(live, `${TEAM_NAMES[homeIdx]} vs ${TEAM_NAMES[awayIdx]}`);
+  for (let t=0; t<2; t++){
+    const slot = live.playerSlot[t];
+    if (slot < 0) continue;
+    const idx = t===0 ? homeIdx : awayIdx;
+    liveAddMsg(live, `玩家${slot+1}操控：${TEAM_NAMES[idx]}`);
+  }
+}
+
+/* =========================================================
+   18. 刷新锦标赛界面
+   ========================================================= */
+function refreshTournamentUI(){
+  let title = '', subtitle = '';
+  if (currentStage === 'group'){
+    title = `小组赛 第 ${groupRound+1} 轮`;
+    subtitle = '每组前两名 + 8 个成绩最好的第三名晋级 32 强';
+  } else if (currentStage === 'ko' && koRounds[koStageIdx]){
+    const r = koRounds[koStageIdx];
+    title = r.name;
+    subtitle = `${r.matches.length} 场 · 加时赛 + 点球大战`;
+  } else if (tournamentOver){
+    title = '🏆 世界杯结束';
+    subtitle = champion !== null ? `冠军：${TEAM_NAMES[champion]}` : '';
+  }
+  $('tTitle').innerHTML = `${title}<small>${subtitle}</small>`;
+
+  const playBtn = $('playBtn');
+  const autoBtn = $('autoBtn');
+
+  if (tournamentOver){
+    playBtn.disabled = true; autoBtn.disabled = true;
+    playBtn.textContent = '✔ 已结束';
+  } else if (currentStage === 'group'){
+    const done = getCurrentGroupMatches().every(m => m.played);
+    if (done){
+      if (groupRound < 2) playBtn.textContent = '▶ 第 ' + (groupRound+2) + ' 轮';
+      else               playBtn.textContent = '▶ 进入淘汰赛';
+    } else {
+      playBtn.textContent = '▶ 进行本轮';
+    }
+    playBtn.disabled = false;
+    autoBtn.disabled = false;
+    autoBtn.textContent = '⏩ 快速完成小组赛';
+  } else if (currentStage === 'ko'){
+    const round = koRounds[koStageIdx];
+    const done = round.matches.every(m => m.played);
+    playBtn.textContent = done ? '▶ 下一轮' : '▶ 进行本轮';
+    playBtn.disabled = false;
+    autoBtn.disabled = false;
+    autoBtn.textContent = '⏩ 快速完成淘汰赛';
+  }
+
+  let gh = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+  for (let g=0; g<12; g++){
+    const rows = rankGroup(g);
+    const played = groupMatches.filter(m => m.group===g && m.played).length;
+    gh += '<div class="group-box">';
+    gh += `<div class="gt"><span>第 ${String.fromCharCode(65+g)} 组</span><span>${played}/6</span></div>`;
+    gh += '<table class="group-table"><thead><tr><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>净</th><th>分</th></tr></thead><tbody>';
+    rows.forEach((r, i) => {
+      const isQ = i < 2;
+      const isThird = i === 2;
+      const cls = isQ ? 'qual' : (isThird ? 'third-q' : '');
+      const isPlayer = playerTeams.includes(r.team);
+      gh += `<tr class="${cls}"><td style="${isPlayer?'color:#d29922;font-weight:800':''}">${TEAM_NAMES[r.team]}</td>`;
+      gh += `<td>${r.played}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>`;
+      gh += `<td>${r.gd>0?'+':''}${r.gd}</td><td><b>${r.pts}</b></td></tr>`;
+    });
+    gh += '</tbody></table></div>';
+  }
+  gh += '</div>';
+
+  gh += '<h3 style="margin-top:18px">📅 本轮比赛</h3>';
+  const curMatches = currentStage==='group'
+    ? getCurrentGroupMatches()
+    : (koRounds[koStageIdx] ? koRounds[koStageIdx].matches : []);
+
+  if (!curMatches.length){
+    gh += '<div style="color:#7d8590;font-size:12px;padding:8px">无比赛</div>';
+  } else {
+    for (const m of curMatches){
+      const isPlayer = playerTeams.includes(m.home) || playerTeams.includes(m.away);
+      let sc = ' vs ';
+      if (m.played) sc = `${m.hg} - ${m.ag}`;
+      let extra = '';
+      if (m.played && m.penH !== null && m.penA !== null){
+        extra = `<span class="pko">点球 ${m.penH}-${m.penA}</span>`;
+      } else if (m.played && m.wentET){
+        extra = '<span class="pko">加时</span>';
+      }
+      gh += `<div class="match-row ${m.played?'played':''} ${isPlayer?'player-match':''}">`;
+      gh += `<span class="mt">${TEAM_NAMES[m.home]}</span>`;
+      gh += `<span class="ms">${m.played ? sc : '—'}</span>`;
+      gh += `<span class="ma">${TEAM_NAMES[m.away]} ${extra}</span>`;
+      gh += `</div>`;
+    }
+  }
+  $('groupsList').innerHTML = gh;
+  $('groupInfo').textContent = `第 ${groupRound+1}/3 轮`;
+
+  let kh = '';
+  if (koRounds.length === 0){
+    kh = '<div style="color:#7d8590;font-size:12px;padding:8px">小组赛结束后生成对阵（32强按 2026 世界杯规则配对）</div>';
+  } else {
+    for (let ri=0; ri<koRounds.length; ri++){
+      const r = koRounds[ri];
+      const isCurrent = ri === koStageIdx;
+      kh += `<div style="margin-bottom:14px">`;
+      kh += `<h3 style="font-size:13px;margin:8px 0 6px;color:${isCurrent?'#ffd54a':'#8b949e'}">${r.name} <span>${r.matches.filter(m=>m.played).length}/${r.matches.length}</span></h3>`;
+      for (const m of r.matches){
+        const isPlayer = playerTeams.includes(m.home) || playerTeams.includes(m.away);
+        let sc = ' vs ';
+        if (m.played) sc = `${m.hg} - ${m.ag}`;
+        let extra = '';
+        if (m.played && m.penH !== null && m.penA !== null){
+          extra = `<span class="pko">点球 ${m.penH}-${m.penA}</span>`;
+        } else if (m.played && m.wentET){
+          extra = '<span class="pko">加时</span>';
+        }
+        let tagA = '', tagB = '';
+        if (r.stage === 'R32' && m.homeGroup !== undefined){
+          tagA = `<span class="tag">${String.fromCharCode(65+m.homeGroup)}组</span>`;
+        }
+        if (r.stage === 'R32' && m.awayGroup !== undefined){
+          tagB = `<span class="tag">${String.fromCharCode(65+m.awayGroup)}组</span>`;
+        }
+        kh += `<div class="match-row ${m.played?'played':''} ${isPlayer?'player-match':''}">`;
+        kh += `<span class="mt">${TEAM_NAMES[m.home]}${tagA}</span>`;
+        kh += `<span class="ms">${m.played ? sc : '—'}</span>`;
+        kh += `<span class="ma">${TEAM_NAMES[m.away]}${tagB} ${extra}</span>`;
+        kh += `</div>`;
+      }
+      kh += '</div>';
+    }
+    if (champion !== null){
+      let thirdWinner = null;
+      const tpRound = koRounds.find(r => r.stage === 'ThirdPlace');
+      if (tpRound && tpRound.matches[0] && tpRound.matches[0].played){
+        thirdWinner = tpRound.matches[0].winner;
+      }
+
+      kh += `<div style="margin-top:14px;padding:14px;background:linear-gradient(180deg,#3d2d00,#1c1600);border:1px solid #d29922;border-radius:10px;text-align:center">`;
+      kh += `<div style="font-size:12px;color:#d29922;margin-bottom:4px">🏆 世界杯冠军</div>`;
+      kh += `<div style="font-size:20px;font-weight:800;color:#ffd54a">${TEAM_NAMES[champion]}</div>`;
+      if (thirdWinner !== null){
+        kh += `<div style="margin-top:8px;font-size:12px;color:#cd7f32">🥉 季军：${TEAM_NAMES[thirdWinner]}</div>`;
+      }
+      kh += `</div>`;
+    }
+  }
+  $('koList').innerHTML = kh;
+  $('koInfo').textContent = koRounds.length ? `${koRounds.length} 轮` : '';
+}
+
+/* =========================================================
+   19. 按钮绑定
+   ========================================================= */
+$('playBtn').addEventListener('click', () => {
+  if (tournamentOver) return;
+  if (currentStage === 'group'){
+    const done = getCurrentGroupMatches().every(m => m.played);
+    if (done){
+      if (groupRound < 2) groupRound++;
+      else { currentStage = 'ko'; buildR32(); }
+      refreshTournamentUI();
+    } else playCurrentRound();
+  } else if (currentStage === 'ko'){
+    const round = koRounds[koStageIdx];
+    const done = round.matches.every(m => m.played);
+    if (done) afterKOStage();
+    else playCurrentRound();
+  }
+});
+
+$('autoBtn').addEventListener('click', () => {
+  if (tournamentOver) return;
+  if (currentStage === 'group'){
+    let safety = 0;
+    while (currentStage === 'group' && safety < 100){
+      safety++;
+      const remaining = getCurrentGroupMatches().filter(m => !m.played);
+      if (remaining.length === 0){
+        if (groupRound < 2) groupRound++;
+        else { currentStage = 'ko'; buildR32(); break; }
+        continue;
+      }
+      for (const m of remaining){
+        const r = simulateMatch(m.home, m.away);
+        m.hg = r.hg; m.ag = r.ag; m.played = true;
+        applyGroupResult(m);
+      }
+    }
+    refreshTournamentUI();
+  } else if (currentStage === 'ko'){
+    let safety = 0;
+    while (currentStage === 'ko' && !tournamentOver && safety < 100){
+      safety++;
+      if (koRounds.length === 0){ buildR32(); continue; }
+      const r = koRounds[koStageIdx];
+      for (const m of r.matches){
+        if (m.played) continue;
+        const res = simulateKnockout(m.home, m.away);
+        m.hg = res.hg; m.ag = res.ag;
+        m.etHg = res.etHg; m.etAg = res.etAg;
+        m.penH = res.penH; m.penA = res.penA;
+        m.wentET = res.wentET;
+        m.winner = res.winner;
+        m.played = true;
+      }
+      afterKOStage();
+      if (tournamentOver) break;
+    }
+    refreshTournamentUI();
+  }
+});
+
+$('backMenuBtn').addEventListener('click', () => {
+  live = null;
+  showScreen('menuScreen');
+});
+
+$('mPause').addEventListener('click', () => {
+  if (live) live.paused = !live.paused;
+});
+
+$('mSpeed').addEventListener('click', () => {
+  if (!live) return;
+  const speeds = [0.5, 1, 2, 3];
+  const idx = speeds.indexOf(live.speedMul);
+  live.speedMul = speeds[(idx+1) % speeds.length];
+  $('mSpeed').textContent = `速度 ×${live.speedMul}`;
+});
+
+/* =========================================================
+   20. 菜单逻辑
+   ========================================================= */
+let selectedMode = null;
+
+$('btnSingle').addEventListener('click', () => selectMode('single'));
+$('btnMulti').addEventListener('click', () => selectMode('multi'));
+
+function selectMode(m){
+  selectedMode = m;
+  $('btnSingle').classList.toggle('selected', m==='single');
+  $('btnMulti').classList.toggle('selected', m==='multi');
+  $('selectRow2').style.display = m==='multi' ? 'block' : 'none';
+  updateStartBtn();
+}
+
+function populateTeamSelects(){
+  const s1 = $('teamSelect1');
+  const s2 = $('teamSelect2');
+  s1.innerHTML = '';
+  s2.innerHTML = '';
+
+  const list = TEAM_NAMES.map((n, i) => ({ name:n, idx:i }));
+  for (const item of list){
+    const opt = document.createElement('option');
+    opt.value = item.idx;
+    opt.textContent = `${item.idx+1}. ${item.name} (${Math.round(TEAM_RATINGS[item.idx])})`;
+    s1.appendChild(opt);
+  }
+
+  function refreshSecond(){
+    const v1 = parseInt(s1.value);
+    const keep = s2.value;
+    s2.innerHTML = '';
+    for (const item of list){
+      if (item.idx === v1) continue;
+      const opt = document.createElement('option');
+      opt.value = item.idx;
+      opt.textContent = `${item.idx+1}. ${item.name} (${Math.round(TEAM_RATINGS[item.idx])})`;
+      s2.appendChild(opt);
+    }
+    if (keep && s2.querySelector(`option[value="${keep}"]`)) s2.value = keep;
+  }
+  s1.onchange = refreshSecond;
+  s1.selectedIndex = 0;
+  refreshSecond();
+}
+
+function updateStartBtn(){
+  $('startBtn').disabled = selectedMode === null;
+}
+
+$('startBtn').addEventListener('click', () => {
+  if (!selectedMode) return;
+  const t1 = parseInt($('teamSelect1').value);
+  playerTeams = [t1];
+  if (selectedMode === 'multi'){
+    const t2 = parseInt($('teamSelect2').value);
+    if (t2 === t1){ alert('两队不能相同'); return; }
+    playerTeams.push(t2);
+  }
+  gameMode = selectedMode;
+  startTournament();
+});
+
+populateTeamSelects();
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
